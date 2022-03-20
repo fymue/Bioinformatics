@@ -1,3 +1,3 @@
-# Simple implementations of common bioinformatics algorithms
+# Simple implementations of common (bio)informatics algorithms
 
-Simple implementations of random bioinformatics-related algorithms and analyses I come across in my studies.
+Simple implementations of random (bio)informatics-related algorithms and analyses I come across in my studies.

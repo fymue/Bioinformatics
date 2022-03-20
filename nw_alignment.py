@@ -151,14 +151,14 @@ def valid_command(args): return False if not all(inp in valid_commands | help_co
 def print_help():
     print("Usage: nw_alignment.py [OPTIONS] string1 string2\n")
     print("Options:\n")
-    print("-total    print the maximum number of possible alignments")
-    print("-matrix    print the needleman wunsch scores matrix")
-    print("-trace    sample (co-)optimal alignments")
-    print("-costf 'min'|'max'    use minimum or maximum to calculate optimal score at each step")
-    print("-optimal    print the optimal alignment score")
-    print("-m value    match value (default is 0)")
-    print("-mm value    mismatch value (default is 1)")
-    print("-g value    gap value (default is 1)\n")
+    print("-total\t\t\t\tprint the maximum number of possible alignments")
+    print("-matrix\t\t\t\tprint the needleman wunsch scores matrix")
+    print("-trace\t\t\t\tsample (co-)optimal alignments")
+    print("-costf 'min'|'max'\t\tuse minimum or maximum to calculate optimal score at each step")
+    print("-optimal\t\t\tprint the optimal alignment score")
+    print("-m value\t\t\tmatch value (default is 0)")
+    print("-mm value\t\t\tmismatch value (default is 1)")
+    print("-g value\t\t\tgap value (default is 1)\n")
 
 def parse_command():
 
