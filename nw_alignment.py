@@ -151,14 +151,14 @@ def valid_command(args): return False if not all(inp in valid_commands | help_co
 def print_help():
     print("Usage: nw_alignment.py [OPTIONS] string1 string2\n")
     print("Options:\n")
-    print("-total\tprint the maximum number of possible alignments")
-    print("-matrix\tprint the needleman wunsch scores matrix")
-    print("-trace\tsample (co-)optimal alignments")
-    print("-costf ['min'/'max']\tuse minimum or maximum to calculate optimal score at each step")
-    print("-optimal\tprint the optimal alignment score")
-    print("-m [value]\tmatch value (default is 0)")
-    print("-mm [value]\tmismatch value (default is 1)")
-    print("-g [value]\tgap value (default is 1)\n")
+    print("-total    print the maximum number of possible alignments")
+    print("-matrix    print the needleman wunsch scores matrix")
+    print("-trace    sample (co-)optimal alignments")
+    print("-costf 'min'|'max'    use minimum or maximum to calculate optimal score at each step")
+    print("-optimal    print the optimal alignment score")
+    print("-m value    match value (default is 0)")
+    print("-mm value    mismatch value (default is 1)")
+    print("-g value    gap value (default is 1)\n")
 
 def parse_command():
 
@@ -170,7 +170,7 @@ def parse_command():
     targs = len(argv)
     valid = valid_command(argv)
 
-    if targs < 3 and not valid:
+    if targs == 1 or not valid:
         print("Usage: nw_alignment.py [OPTIONS] string1 string2\n")
         print("use --help, -help or -h to display usage help\n")
 
