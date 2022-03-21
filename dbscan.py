@@ -1,16 +1,35 @@
 import matplotlib.pyplot as plt
 from math import sqrt
+from numpy import mean
 from sys import argv
+from kneed import KneeLocator
 
 class DBScan:
     def __init__(self, input_file, eps, min_pts, delimiter, output_file, title, auto):
-        x, y = self.read_data(input_file, delimiter)
-        if auto: eps = self.estimate_eps(x, y)
-        clusters = self.dbscan(x, y, eps, min_pts)
-        self.plot_clusters(clusters, title, output_file)
+        x, y = self.read_data(input_file, delimiter) #read the data from the input file
+        valid, x, y = self.validate_data(x, y, eps) #validate the data (shape correct etc.)
+        if valid:
+            dists = self.calc_dist_matrix(x, y) #calculate the distances bewtween all the points
+            if auto: eps = self.estimate_eps(x, y, dists, min_pts)
+            clusters = self.dbscan(x, y, eps, min_pts, dists)
+            self.plot_clusters(clusters, title, output_file)
 
-    def estimate_eps(self, x, y):
-        eps = 0
+    def estimate_eps(self, x, y, dists, k):
+        #estimate a proper value of epsilon
+        #1. find the k nearest neighbors of every point
+        #2. find the avg. distance of those k distances
+        #3. sort the avg. distances and find the "knee point" in the curve
+
+        key = lambda p1, p2: (p1, p2) if (p1, p2) in dists else (p2, p1)
+        avg_k_dist = [mean(sorted([dists[key(p1, p2)] for p2 in zip(x, y) if p1 != p2])[:k]) for p1 in zip(x, y)]
+        avg_k_dist.sort()
+        knee_locator = KneeLocator(list(range(len(avg_k_dist))), avg_k_dist, curve="convex", direction="increasing")
+        eps = knee_locator.knee_y
+
+        #plt.plot(avg_k_dist)
+        #plt.show()
+        #plt.close()
+
         return eps
 
     def read_data(self, file, delimiter):
@@ -104,30 +123,24 @@ class DBScan:
     def init_labels(self, x, y): #initialize label lookup table for all points
         return {(x[i], y[i]) : None for i in range(len(x))}
 
-    def dbscan(self, x, y, eps, min_pts):
-        valid, x, y = self.validate_data(x, y, eps) #validate the data (shape correct etc.)
-        if valid:
-            labels = self.init_labels(x, y)
-            dists = self.calc_dist_matrix(x, y)
-            cluster_members = [set()] 
-            cluster_id = 0
+    def dbscan(self, x, y, eps, min_pts, dists):
+        labels = self.init_labels(x, y)
+        cluster_members = [set()] 
+        cluster_id = 0
 
-            for point in zip(x, y):
-                if labels[point] == None: #only process unlabeled points (some will be labeled in expand_cluster())
-                    seedlist = self.region_query(point, x, y, dists, eps) #get neighbor points within eps
-                    if len(seedlist) >= min_pts: #if point is a "core" point, make new cluster and expand it
-                        labels[point] = "core" 
-                        cluster_id += 1
-                        cluster_members.append({point}) 
-                        self.expand_cluster(x, y, seedlist, labels, cluster_members, cluster_id, dists, eps, min_pts)
-                    else:
-                        labels[point] = "noise"
-                        cluster_members[0].add(point)
+        for point in zip(x, y):
+            if labels[point] == None: #only process unlabeled points (some will be labeled in expand_cluster())
+                seedlist = self.region_query(point, x, y, dists, eps) #get neighbor points within eps
+                if len(seedlist) >= min_pts: #if point is a "core" point, make new cluster and expand it
+                    labels[point] = "core" 
+                    cluster_id += 1
+                    cluster_members.append({point}) 
+                    self.expand_cluster(x, y, seedlist, labels, cluster_members, cluster_id, dists, eps, min_pts)
+                else:
+                    labels[point] = "noise"
+                    cluster_members[0].add(point)
 
-            return cluster_members
-
-        return None
-
+        return cluster_members
 
 #handling of command line features
 valid_commands = {"-d", "-eps", "-minpts", "-auto", "-title", "-out"}
@@ -166,11 +179,12 @@ def parse_command():
     elif targs >= 3 and valid:
         input_file = argv[-1]
         delimiter = get_args_val("-d", " ")
-        eps = float(get_args_val("-eps", -1))
         min_pts = int(get_args_val("-minpts", 4))
         title = get_args_val("-title", "")
         output_file = get_args_val("-out", None)
         auto = True if "-auto" in args else False
+        if auto: eps = None
+        else: eps = float(get_args_val("-eps", -1))
 
         #print(input_file, eps, min_pts, delimiter, output_file, title, auto)
         dbscan = DBScan(input_file, eps, min_pts, delimiter, output_file, title, auto)
