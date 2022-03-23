@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from math import sqrt
 from sys import argv
 from random import random
-from numpy import mean
 
 class KMeans:
-    def __init__(self, input_file, k, runs, delimiter, output_file, title):
+    def __init__(self, input_file, k, runs, delimiter, output_file, title, pp):
         x, y = self.read_data(input_file, delimiter)
-        clusters, centroids = self.kmeans(x, y, k, runs)
+        clusters, centroids = self.kmeans(x, y, k, pp, runs)
         self.plot_clusters(clusters, centroids, title, output_file)
     
     def read_data(self, file, delimiter):
@@ -58,10 +58,13 @@ class KMeans:
         plt.show()
         plt.close()
     
-    def calc_dist(self, pt1, pt2):
+    def calc_dist(self, pt1, pt2, method="reg"):
         #calculate the distance between two points (euclidian distance)
         a = abs(pt1[0] - pt2[0]) ** 2
         b = abs(pt1[1] - pt2[1]) ** 2
+
+        if method == "squared": return a + b
+
         return sqrt(a + b)
     
     def new_centroid(self, mx_x, mx_y): return (random() * mx_x, random() * mx_y) #generate a random point (centroid)
@@ -72,7 +75,7 @@ class KMeans:
         for (pt1, pt2) in cluster_members:
             x.append(pt1)
             y.append(pt2)
-        return (mean(x), mean(y)) 
+        return (np.mean(x), np.mean(y)) 
     
     def find_closest_centroid(self, point, centroids, min_dist, closest_centroid):
         for i, centroid in enumerate(centroids):
@@ -81,8 +84,32 @@ class KMeans:
                 min_dist = curr_dist #keep track of the minimum point-centroid distance
                 closest_centroid = i
         return (min_dist, closest_centroid)
+    
+    def calc_dists(self, point, x, y, method):
+        return [self.calc_dist(point, curr_point, method) for curr_point in zip(x, y)]# if point != curr_point]
+    
+    def find_smart_centroids(self, k, x, y):
+        #kmeans++ version of centroid initialization
+        points = list(zip(x, y))
+        points_i = np.arange(len(points))
+        centroids = []
+        weights = None #in the 1st iteration, the weights of the points will be uniform
 
-    def kmeans(self, x, y, k, runs):
+        while len(centroids) < k:
+            curr_centroid = points[np.random.choice(points_i, p=weights)] #pick a random point as a centroid (based on the weights of the points)
+            centroids.append(curr_centroid)
+
+            #the weights are calculated by dividing the squared euclidian distance of a point to a chosen centroid
+            #by the sum of the distances between all points and the chosen centroid
+            #after the 1st iteration (i.e. after the 1st centroid has been chosen),
+            #the minimum distance between a point and all chosen centroids is chosen as the basis of the point's weight
+
+            weights = np.min(np.array([self.calc_dists(curr_centroid, x, y, "squared") for curr_centroid in centroids]), axis=0)
+            weights /= np.sum(weights)
+        
+        return centroids  
+
+    def kmeans(self, x, y, k, pp, runs):
         #kmeans clustering algorithm
         print(f"k-means clustering algorithm: {k} clusters, {runs} runs.")
         valid, x, y = self.validate_data(x, y) #validate the data (shape etc.)
@@ -96,7 +123,11 @@ class KMeans:
                 print(f"Clustering Run {run+1}/{runs}...", end="\r") 
                 member_change = True
                 cluster_members = [set() for i in range(k)] #points belonging to the respective clusters will go here
-                centroids = [self.new_centroid(mx_x, mx_y) for _ in range(k)] #generate k randomly-placed centroids
+
+                if pp:
+                    centroids = self.find_smart_centroids(k, x, y) #generate the centroids using the kmeans++ version of centroid initialization
+                else:
+                    centroids = [self.new_centroid(mx_x, mx_y) for _ in range(k)] #generate k randomly-placed centroids
                 curr_avg_cdist = [0] * k #keep track of the avg. intra-cluster distance averaged over all clusters of a run
                 cluster_dists = {point : (None, None) for point in zip(x, y)} #keep track of the current cluster and distance to closest centroid of each point
                 
@@ -147,7 +178,7 @@ class KMeans:
         return None
 
 #handling of command line features
-valid_commands = {"-d", "-runs", "-title", "-out"}
+valid_commands = {"-d", "-runs", "-title", "-out", "-pp"}
 help_commands = {"--help", "-help", "-h"}
 
 def valid_command(args): return True if all(inp in valid_commands | help_commands for inp in args[1:len(args)-1] if inp[0] == "-") else False
@@ -158,10 +189,11 @@ def print_help():
     print("The input file should contain the x and y coordinates of a data point in the same line.")
     print("The delimiter can be specified.\n")
     print("Options:\n")
-    print('-d "delimiter"\t\tset the delimiter for the input file (standard: space)')
-    print("-runs value\t\tpick the best run (lowest average intra-cluster distance) out of x runs")
-    print('-title "title"\t\tset the title of the cluster plot')
-    print("-out filename\t\tsave the plot in a file")
+    print('-d "delimiter"\t\t\tset the delimiter for the input file (standard: space)')
+    print("-runs value\t\t\tpick the best run (lowest average intra-cluster distance) out of x runs")
+    print('-title "title"\t\t\tset the title of the cluster plot')
+    print("-out filename\t\t\tsave the plot in a file")
+    print("-pp\t\t\t\tRun the kmeans++ version of the algorithm (better initialization of the centroids)")
 
 def parse_command():
 
@@ -186,7 +218,8 @@ def parse_command():
         runs = int(get_args_val("-runs", 1))
         title = get_args_val("-title", "")
         output_file = get_args_val("-out", None)
+        pp = True if "-pp" in args else False
 
-        kmeans = KMeans(input_file, k, runs, delimiter, output_file, title)
+        kmeans = KMeans(input_file, k, runs, delimiter, output_file, title, pp)
 
 if __name__ == "__main__": parse_command()
