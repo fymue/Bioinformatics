@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from math import sqrt
+from math import sqrt, ceil, floor
 from sys import argv
-from random import random
+from random import random, randint
 
 class KMeans:
     def __init__(self, input_file, k, runs, delimiter, output_file, title, pp):
@@ -83,6 +83,7 @@ class KMeans:
             if curr_dist < min_dist:
                 min_dist = curr_dist #keep track of the minimum point-centroid distance
                 closest_centroid = i
+
         return (min_dist, closest_centroid)
     
     def calc_dists(self, point, x, y, method):
@@ -90,6 +91,7 @@ class KMeans:
     
     def find_smart_centroids(self, k, x, y):
         #kmeans++ version of centroid initialization
+
         points = list(zip(x, y))
         points_i = np.arange(len(points))
         centroids = []
@@ -111,11 +113,10 @@ class KMeans:
 
     def kmeans(self, x, y, k, pp, runs):
         #kmeans clustering algorithm
-        print(f"k-means clustering algorithm: {k} clusters, {runs} runs.")
+        print(f"k-means clustering algorithm: {k} cluster(s), {runs} run(s).")
         valid, x, y = self.validate_data(x, y) #validate the data (shape etc.)
         if valid:
-            mx_x = max(x)
-            mx_y = max(y)
+            
             clustering_runs = [] #collect the clustering results of all runs here
             total_avg_cdist = [] #collect the average intra-cluster distance of every point to its centroid here (for optimization)
             
@@ -127,14 +128,22 @@ class KMeans:
                 if pp:
                     centroids = self.find_smart_centroids(k, x, y) #generate the centroids using the kmeans++ version of centroid initialization
                 else:
-                    centroids = [self.new_centroid(mx_x, mx_y) for _ in range(k)] #generate k randomly-placed centroids
+                    #if kmeans++ centroid initialization is not supposed to be done, place the centroids randomly 
+                    #make sure that the initial random x and y coordinates are within the borders of the most outside points
+                    mn_x, mx_x = floor(min(x)), ceil(max(x))
+                    mn_y, mx_y = floor(max(y)), ceil(max(y))
+                    x_range = randint(mn_x, mx_x)
+                    y_range = randint(mn_y, mx_y)
+
+                    centroids = [self.new_centroid(x_range, y_range) for _ in range(k)] #generate k randomly-placed centroids
+
                 curr_avg_cdist = [0] * k #keep track of the avg. intra-cluster distance averaged over all clusters of a run
                 cluster_dists = {point : (None, None) for point in zip(x, y)} #keep track of the current cluster and distance to closest centroid of each point
                 
                 while member_change: #cluster until no point changes cluster membership
                     member_change = False
                     for point in zip(x, y):
-                        min_dist, closest_cluster = self.find_closest_centroid(point, centroids, mx_x + 1, None)
+                        min_dist, closest_cluster = self.find_closest_centroid(point, centroids, 10e18, None)
                         curr_cluster = cluster_dists[point][1]
 
                         if closest_cluster != curr_cluster: #check if current point has to change cluster membership
