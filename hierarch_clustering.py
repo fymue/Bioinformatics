@@ -60,9 +60,57 @@ class HierarchClustering:
 
         return np.sqrt(a + b)
     
+    def calc_dist_matrix(self, x, y, mask): #calculate distances between all points (upper triangular is sufficient)
+        return np.ma.array([[self.calc_dist(p1, p2) for p1 in zip(x, y)] for p2 in zip(x, y)], mask=mask)
+    
+    def calc_cluster_dist(self, dists, clusters, row, col, cdist_method, overwritten_rows):
+        
+        new_cluster = clusters[row] | clusters[col]
+        sub = dists[list(new_cluster)]
+
+        replace, overwrite = (row, col) if len(clusters[row]) > len(clusters[col]) else (col, row)
+
+        if cdist_method == "single":
+            sub = np.ma.min(sub, axis=0)
+
+        elif cdist_method == "complete":
+            sub = np.ma.max(sub, axis=0)
+
+        for i in range(len(sub)):
+            if not dists.mask[replace, i] and sub[i]: dists[replace, i] = sub[i]
+            if not dists.mask[i, replace] and sub[i]: dists[i, replace] = sub[i]
+            dists[overwrite, i] = np.ma.masked
+            dists[i, overwrite] = np.ma.masked
+
+        overwritten_rows.add(overwrite)
+        clusters[overwrite] = new_cluster
+        clusters[replace] = new_cluster
+    
+    def print_matrix(self, arr):
+        for row in arr:
+            for el in row:
+                if type(el) != np.float64: print(" -- ", end=" ")
+                else:
+                    print(f"{el: 4.2f}", end = " ")
+            print()
+            
     def cluster(self, x, y, k, cdist_method):
         #cluster the data using the agglomerative hiearchical clustering method
-        clusters = {}
+
+        mask = np.array([[False if i > j else True for j in range(len(x))] for i in range(len(x))])
+        dists = self.calc_dist_matrix(x, y, mask)
+        clusters = [{i} for i in range(len(x))]
+        overwritten_rows = set()
+
+        mx_clusters = len(x) - k
+        cluster_c = 0
+
+        while cluster_c < mx_clusters:
+            row, col = np.unravel_index(dists.argmin(), dists.shape)
+            self.calc_cluster_dist(dists, clusters, row, col, cdist_method, overwritten_rows)
+            cluster_c += 1
+
+        clusters = [{(x[el], y[el]) for el in clusters[i]} for i in range(len(clusters)) if i not in overwritten_rows]
 
         return clusters
 
@@ -81,7 +129,7 @@ def print_help():
     print('-d "delimiter"\t\t\tset the delimiter for the input file (standard: space)')
     print('-title "title"\t\t\tset the title of the cluster plot')
     print("-out filename\t\t\tsave the plot in a file")
-    print('-method "method"\t\t\t\tinter-cluster distance calculation method (Options: "single" (default), "complete", "average", "centroid")')
+    print('-method "method"\t\tinter-cluster distance calculation method (Options: "single" (default), "complete", "average", "centroid")')
 
 def parse_command():
 
@@ -103,7 +151,7 @@ def parse_command():
         input_file = argv[-2]
         k = int(argv[-1])
         delimiter = get_args_val("-d", " ")
-        method= int(get_args_val("-method", "single"))
+        method= get_args_val("-method", "single")
         title = get_args_val("-title", "")
         output_file = get_args_val("-out", None)
 
