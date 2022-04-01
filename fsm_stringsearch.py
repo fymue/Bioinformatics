@@ -7,7 +7,7 @@ class Node:
     
     def __str__(self): return str(self.next)
 
-class Trie:
+class SuffixTrie:
     #Trie class
     #constructs a suffix trie (like a tree) based on a input string/text
     #has a start node, which functions as the root
@@ -69,33 +69,21 @@ class Trie:
         #we know if the pattern exists in the text or not
         
         return True if self.find_branch_start(self.trie, pattern)[0] == -1 else False
+    
+    def reconstruct_branches(self, curr_node, branch="", branches=[]):
+        #recursively reconstruct the branches of the suffix tree
 
+        if not curr_node.next:
+            #if a node has no children, the current branch ends and the recursion is stopped
+            branches.append(branch)
+            return
 
-test_patterns = ["sample", "sas", "ample", "aample", "sasample", "ee", "lle"]
-control_res = [True, True, True, False, True, False, False]
-text = "sasample"
+        for c in curr_node.next:
+            self.reconstruct_branches(curr_node.next[c], branch + "" + c)
+        
+        return branches
 
-def test(text, patterns, control_res):
-    trie = Trie(text)
+    def print_trie(self):
+        branches = self.reconstruct_branches(self.trie)
 
-    for test, comp in zip(patterns, control_res):
-        print(f"Test word '{test}' in text: {trie.search(test)} (Algorithm result), {comp} (Real reference)")
-
-if __name__ == "__main__": test(text, test_patterns, control_res)
-
-
-"""
-node = trie.trie.next
-for c in node:
-    node = node[c].next
-    print(c, end=" ")
-    while node:
-        for c in node:
-            print(c, end=" ")
-            node = node[c].next
-    print()
-    node = trie.trie.next
-
-#trie.print_trie()
-"""
 
