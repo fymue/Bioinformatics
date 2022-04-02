@@ -7,9 +7,9 @@ class Node:
     
     def __str__(self): return str(self.next)
 
-class SuffixTrie:
+class Trie:
     #Trie class
-    #constructs a suffix trie (like a tree) based on a input string/text
+    #constructs a trie (like a tree) based on a input string/text
     #has a start node, which functions as the root
     #enables O(m) search of a pattern in the provided text (m: length of pattern)
 
@@ -18,7 +18,7 @@ class SuffixTrie:
         self.trie = self.construct_trie(text)
 
     def construct_trie(self, text):
-        #construct the suffix trie
+        #construct the trie
 
         trie = Node() #initialize the trie w/ a start node
         curr_node = trie #store a reference to the current node
@@ -65,13 +65,13 @@ class SuffixTrie:
 
     def search(self, pattern):
         #uses the find_branch_start() function to check if a pattern is already part of the tree
-        #if we run this search after the whole suffix trie has been constructed,
+        #if we run this search after the whole trie has been constructed,
         #we know if the pattern exists in the text or not
         
         return True if self.find_branch_start(self.trie, pattern)[0] == -1 else False
     
     def reconstruct_branches(self, curr_node, branch="", branches=[]):
-        #recursively reconstruct the branches of the suffix tree
+        #recursively reconstruct the branches of the tree
 
         if not curr_node.next:
             #if a node has no children, the current branch ends and the recursion is stopped
@@ -84,6 +84,30 @@ class SuffixTrie:
         return branches
 
     def print_trie(self):
+        #print the trie like a finite-state machine (FSM)
+        #dots are states
+        #characters are transitions
+        #since its modeling a trie and we want to accept every substring of the input text,
+        #every state is a final state
+
+        def adjust_print(branch, prev):
+            for i, c in enumerate(prev):
+                if c != branch[i]: break
+            
+            return " " * i * 2 + "\u2514" + "\u00B7".join(branch[i:]) + "\u00B7"
+
         branches = self.reconstruct_branches(self.trie)
+        prev = branches[0]
+
+        print(f"\u00B7\n\u2514" + "\u00B7".join(branches[0]) + "\u00B7")
+
+        for i in range(1, len(branches)):
+            branch = adjust_print(branches[i], prev)
+            print(branch)
+            prev = branches[i]
+        
+        print()
+
+
 
 
