@@ -1,13 +1,15 @@
 package stringsearch;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class Node
 {
-    public HashMap<Character, Node> next;
+    //Node class
+    //only has "next" field -> contains edge(s) (characters) and node(s) they point to
+    public LinkedHashMap<Character, Node> next;
 
     public Node()
     {
-        this.next = new HashMap<Character, Node>();
+        this.next = new LinkedHashMap<Character, Node>();
     }
 }
