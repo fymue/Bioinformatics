@@ -1,9 +1,51 @@
 package alignment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Collections;
+
+class CmdLineHelper
+{
+    public void printHelp()
+    {
+        System.out.println("Usage: NeedlemanWunsch.class [OPTIONS] string1 string2\n");
+        System.out.println("Options:\n");
+        System.out.println("-total\t\t\t\tprint the maximum number of possible alignments");
+        System.out.println("-matrix\t\t\t\tprint the needleman wunsch scores matrix");
+        System.out.println("-trace\t\t\t\tsample (co-)optimal alignments");
+        System.out.println("-costf 'min'|'max'\t\tuse minimum or maximum to calculate optimal score at each step");
+        System.out.println("-optimal\t\t\tprint the optimal alignment score");
+        System.out.println("-m value\t\t\tmatch value (default is 0)");
+        System.out.println("-mm value\t\t\tmismatch value (default is 1)");
+        System.out.println("-g value\t\t\tgap value (default is 1)\n");
+    }
+
+    public String getArgsVal(String[] args, String arg, String defVal)
+    {
+        for (int i=0; i<args.length; i++)
+        {
+            if (args[i].equals(arg))
+            {
+                return args[i+1];
+            }
+        }
+        return defVal;
+    }
+
+    public boolean isValid(String[] args, HashSet<String> allCommands)
+    {
+        for (int i=1; i<args.length-2; i++)
+        {
+            if (args[i].charAt(0) != '-' || (int)args[i].charAt(1) <= 65) continue;
+            if (!allCommands.contains(args[i])) return false;
+        }
+        return true;
+    }
+
+}
 
 public class NeedlemanWunsch
 {
@@ -72,7 +114,7 @@ public class NeedlemanWunsch
     public void align(String s, String t, int match, int mismatch, int gap, boolean printMax,
                       boolean printOptimal, boolean printScores, boolean printTrace)
     {
-        System.out.printf("\nAlignment of '%s' and '%s' using the Needleman-Wunsch algorithm", s, t);
+        System.out.printf("\nAlignment of '%s' and '%s' using the Needleman-Wunsch algorithm\n\n", s, t);
         System.out.printf("Cost parameters: match = %d, mismatch = %d, gap = %d\n\n", this.match, this.mismatch, this.gap);
 
         int m = s.length() + 1; //number of rows, s: 1st sequence
@@ -113,8 +155,8 @@ public class NeedlemanWunsch
                 
                 //get best score according to cost function (standard=min)
                 int score = 0;
-                if (this.costf == "min") score = values.get(0);
-                else if (this.costf == "max") score = values.get(values.size()-1);                
+                if (this.costf.equals("min")) score = values.get(0);
+                else if (this.costf.equals("max")) score = values.get(2);               
 
                 nwArr[i][j] = score;
 
@@ -189,7 +231,42 @@ public class NeedlemanWunsch
     }
 
     public static void main(String[] args) {
-        NeedlemanWunsch aligner = new NeedlemanWunsch();
-        aligner.align("Freizeit", "Zeitgeist");
+        List<String> tmpValidCommands = Arrays.asList("-matrix", "-total", "-trace", "-costf", "-optimal", "-m", "-mm", "-g");
+        List<String> tmpHelpCommands = Arrays.asList("--help", "-help", "-h");
+        HashSet<String> validCommands = new HashSet<String>(tmpValidCommands);
+        HashSet<String> helpCommands = new HashSet<String>(tmpHelpCommands);
+        HashSet<String> allCommands = validCommands;
+        allCommands.addAll(helpCommands);
+        HashSet<String> cmdArgs = new HashSet<String>(Arrays.asList(args));
+
+        CmdLineHelper helper = new CmdLineHelper();
+
+        boolean valid = helper.isValid(args, allCommands);
+
+        if (args.length == 0  || !valid)
+        {
+            System.out.println("Usage: NeedlemanWunsch.class [OPTIONS] string1 string2\n");
+            System.out.println("use --help, -help or -h to display usage help\n");
+        }
+        else if (args.length == 1 && helpCommands.contains(args[0])) helper.printHelp();
+
+        else if (args.length >= 2 && valid)
+        {
+            String s = args[args.length-2];
+            String t = args[args.length-1];
+
+            int match = Integer.parseInt(helper.getArgsVal(args, "-m", "0"));
+            int mismatch = Integer.parseInt(helper.getArgsVal(args, "-mm", "1"));
+            int gap = Integer.parseInt(helper.getArgsVal(args, "-g", "1"));
+            String costf = helper.getArgsVal(args, "-costf", "min");
+            boolean printMax = cmdArgs.contains("-total") ? true : false;
+            boolean printOptimal = cmdArgs.contains("-optimal") ? true : false;
+            boolean printScores = cmdArgs.contains("-matrix") ? true : false;
+            boolean printTrace = cmdArgs.contains("-trace") ? true : false;
+
+            NeedlemanWunsch aligner = new NeedlemanWunsch(match, mismatch, gap, costf,
+                                                          printMax,printTrace, printScores, printOptimal);
+            aligner.align(s, t);
+        }
     }
 }
