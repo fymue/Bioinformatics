@@ -74,31 +74,6 @@ def needleman_wunsch(s, t, match=0, mismatch=1, gap=1, costf=min, print_scores=F
                 if possible_scores[op] == score:
                     op_arr[i][j].add(op) #add the operation associated with the best score
 
-    #sample co-optimal alignments via backtracing
-    i = m - 1
-    j = n - 1
-    optimal_alignments = nw_traceback(op_arr, s, t, i, j, "", "", [])
-
-    #sample one (co-)optimal alignment iteratively
-    """
-    optimal_alignment_1 = ""
-    optimal_alignment_2 = ""
-    while i > 0 or j > 0: #go backwards iteratively until we reach 0 0 (aka the start)
-        if "E" in op_arr[i][j]: #if replacement was done, go up diagonally
-            optimal_alignment_1 += s[i-1]
-            optimal_alignment_2 += t[j-1]
-            i -= 1
-            j -= 1
-        elif "I" in op_arr[i][j]: #if insertion was done, go to the left
-            optimal_alignment_1 += "_"
-            optimal_alignment_2 += t[j-1]
-            j -= 1
-        else: #if deletion was done, go up
-            optimal_alignment_1 += s[i-1]
-            optimal_alignment_2 += "_"
-            i -= 1
-    """
-
     #print maximum number of possible alignments
     if print_max: 
         print(f"Total number of possible alignments: A('{s}', '{t}'):", max_alignments(len(s), len(t), {}), "\n")
@@ -113,11 +88,11 @@ def needleman_wunsch(s, t, match=0, mismatch=1, gap=1, costf=min, print_scores=F
             else: print(" ", row)
         print("\n")
 
-
-    #print("One possible optimal alignment:")
-    #print(optimal_alignment_1[::-1] + "\n" + optimal_alignment_2[::-1] + "\n")
-    
     if print_trace:
+        #sample co-optimal alignments via backtracing
+        i = m - 1
+        j = n - 1
+        optimal_alignments = nw_traceback(op_arr, s, t, i, j, "", "", [])
         print(f"Co-optimal alignments ({len(optimal_alignments)} total): \n")
         for al1, al2, in optimal_alignments:
             print(al1[::-1])
