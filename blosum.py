@@ -60,10 +60,10 @@ def calc_blosum(blocks):
                     total_subs += 1
    
     #Step 2: Divide every value by the total number of subs (to get the relative number of subs) (Original BLOSUM paper: q_ij-Matrix)
-    for amino_pair in q_matrix: q_matrix[amino_pair] /= total_subs
-
     #Step 3: Sum up the relative frequencies of observed subs for every amino acid (Original BLOSUM paper: p_ij-Matrix)
     for amino_pair in q_matrix:
+        q_matrix[amino_pair] /= total_subs
+
         if amino_pair[0] == amino_pair[1]:
             p_matrix[amino_pair[0]] += q_matrix[amino_pair]
         else:
@@ -71,11 +71,11 @@ def calc_blosum(blocks):
             p_matrix[amino_pair[1]] += q_matrix[amino_pair] / 2
 
     #Step 4: Calculate the estimated sub frequencies for every pair of amino acids (Original BLOSUM paper: e_ij-Matrix)
-    e_matrix = {amino_pair : p_matrix[amino_pair[0]] * p_matrix[amino_pair[1]] if amino_pair[0] == amino_pair[1] else p_matrix[amino_pair[0]] * p_matrix[amino_pair[1]] * 2 for amino_pair in q_matrix}
+    s_matrix = {amino_pair : p_matrix[amino_pair[0]] * p_matrix[amino_pair[1]] if amino_pair[0] == amino_pair[1] else p_matrix[amino_pair[0]] * p_matrix[amino_pair[1]] * 2 for amino_pair in q_matrix}
 
     #Step 5: Divide the observed sub frequencies by the estimated sub frequencies and normalize them (log2) (Original BLOSUM paper: s_ij-Matrix)
     #this matrix equals the BLOSUM
-    s_matrix = {amino_pair : round( 2 * log2(q_matrix[amino_pair] / e_matrix[amino_pair])) for amino_pair in q_matrix}
+    for amino_pair in s_matrix: s_matrix[amino_pair] = round( 2 * log2(q_matrix[amino_pair] / s_matrix[amino_pair]))
     
     return s_matrix, all_aminos
 
