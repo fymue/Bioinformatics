@@ -34,7 +34,7 @@ public class Blosum
         ArrayList<ArrayList<String>> blocks = new ArrayList<ArrayList<String>>();
         ArrayList<String> seqsOfBlock = new ArrayList<String>();
         boolean look = false;
-        
+
         try
         {
             Scanner fin = new Scanner(new File(blocksFile));
@@ -114,13 +114,15 @@ public class Blosum
             }
         }
 
-        //Step 2: Divide every value by the total number of subs (to get the relative number of subs) (Original BLOSUM paper: q_ij-Matrix)
-        //Step 3: Sum up the relative frequencies of observed subs for every amino acid (Original BLOSUM paper: p_ij-Matrix)
         for (String aminopair: qijMatrix.keySet())
         {
+            //Step 2: Divide every value by the total number of subs (to get the relative number of subs) (Original BLOSUM paper: q_ij-Matrix)
             qijMatrix.put(aminopair, qijMatrix.get(aminopair) / totalSubs);
+
             char as1 = aminopair.charAt(0);
             char as2 = aminopair.charAt(1);
+
+            //Step 3: Sum up the relative frequencies of observed subs for every amino acid (Original BLOSUM paper: p_ij-Matrix)
             if (as1 == as2) pijMatrix.put(as1, pijMatrix.get(as1) + qijMatrix.get(aminopair));
             else
             {
@@ -129,19 +131,20 @@ public class Blosum
             }
         }
 
-        //Step 4: Calculate the estimated sub frequencies for every pair of amino acids (Original BLOSUM paper: e_ij-Matrix)
         for (String aminopair: qijMatrix.keySet())
         {
             char as1 = aminopair.charAt(0);
             char as2 = aminopair.charAt(1);
+
+            //Step 4: Calculate the estimated sub frequencies for every pair of amino acids (Original BLOSUM paper: e_ij-Matrix)
             double value = pijMatrix.get(as1) * pijMatrix.get(as2);
             if (as1 != as2) value *= 2;
+            
+            //Step 5: Divide the observed sub frequencies by the estimated sub frequencies and normalize them (log2) (Original BLOSUM paper: s_ij-Matrix)
+            //this matrix equals the BLOSUM
+            value = (double)Math.round(log2(qijMatrix.get(aminopair) / value));
             sijMatrix.put(aminopair, value);
         }
-
-        //Step 5: Divide the observed sub frequencies by the estimated sub frequencies and normalize them (log2) (Original BLOSUM paper: s_ij-Matrix)
-        //this matrix equals the BLOSUM
-        for (String aminopair: sijMatrix.keySet()) sijMatrix.put(aminopair, (double)Math.round(2 * log2(qijMatrix.get(aminopair) / sijMatrix.get(aminopair))));
 
         return sijMatrix;
     }
