@@ -1,31 +1,26 @@
 package alignment;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Collections;
+import java.util.*;
 import alignment.CommandLineHelper;
 
 public class NeedlemanWunsch
 {
     private String costf;
     private int match, mismatch, gap;
-    private boolean printMax, printTrace, printScores, printOptimal;
+    private boolean printMax, printTrace, printScores, printOptimal, caseSensitive;
 
     public NeedlemanWunsch()
     {
-        this(0, 1, 1, "min", false, true, true, true);
+        this(0, 1, 1, "min", false, true, true, true, false);
     }
 
     public NeedlemanWunsch(int match, int mismatch, int gap)
     {
-        this(match, mismatch, gap, "min", false, true, false, true);
+        this(match, mismatch, gap, "min", false, true, false, true, false);
     }
 
-    public NeedlemanWunsch(int match, int mismatch, int gap, String costf, boolean printMax,
-                           boolean printTrace, boolean printScores, boolean printOptimal)
+    public NeedlemanWunsch(int match, int mismatch, int gap, String costf, boolean printMax, boolean printTrace,
+                           boolean printScores, boolean printOptimal, boolean caseSensitive)
     {
         this.match = match;
         this.mismatch = mismatch;
@@ -35,6 +30,7 @@ public class NeedlemanWunsch
         this.printOptimal = printOptimal;
         this.printScores = printScores;
         this.printTrace = printTrace;
+        this.caseSensitive = caseSensitive;
     }
 
     public long maxAlignments(int m, int n)
@@ -69,14 +65,14 @@ public class NeedlemanWunsch
     public void align(String s, String t)
     {
         align(s, t, this.match, this.mismatch, this.gap, this.printMax,
-              this.printOptimal, this.printScores, this.printTrace);
+              this.printOptimal, this.printScores, this.printTrace, this.caseSensitive);
     }
 
     public void align(String s, String t, int match, int mismatch, int gap, boolean printMax,
-                      boolean printOptimal, boolean printScores, boolean printTrace)
+                      boolean printOptimal, boolean printScores, boolean printTrace, boolean caseSensitive)
     {
         System.out.printf("\nAlignment of '%s' and '%s' using the Needleman-Wunsch algorithm\n\n", s, t);
-        System.out.printf("Cost parameters: match = %d, mismatch = %d, gap = %d\n\n", this.match, this.mismatch, this.gap);
+        System.out.printf("Cost parameters: match = %d, mismatch = %d, gap = %d\n\n", match, mismatch, gap);
 
         int m = s.length() + 1; //number of rows, s: 1st sequence
         int n = t.length() + 1; //number of columns, t: 2nd sequence
@@ -89,10 +85,10 @@ public class NeedlemanWunsch
         //Editing operations: S = Stop, I = Insertion, D = Deletion, E : Replacement
 
         //matrix for the editing operations (needed for backtracing later)
-        ArrayList<ArrayList<HashSet<Character>>> opArr = new ArrayList<ArrayList<HashSet<Character>>>();
+        ArrayList<ArrayList<HashSet<Character>>> opArr = new ArrayList<ArrayList<HashSet<Character>>>(m);
         for (int i=0; i<m; i++)
         {
-            opArr.add(new ArrayList<HashSet<Character>>());
+            opArr.add(new ArrayList<HashSet<Character>>(n));
             for (int j=0; j<n; j++) opArr.get(i).add(new HashSet<Character>());
         }
 
@@ -100,14 +96,20 @@ public class NeedlemanWunsch
         for (int i=1; i<m; i++) opArr.get(i).get(0).add('D'); //fill first column
         for (int i=1; i<n; i++) opArr.get(0).get(i).add('I'); //fill first row
 
+        if (!caseSensitive)
+        {
+            s = s.toUpperCase();
+            t = t.toUpperCase();
+        }
+
         for (int i=1; i<m; i++)
         {
             for (int j=1; j<n; j++)
             {
                 //calculate the scores of each operation
-                int scoreLeft = nwArr[i-1][j] + this.gap; //insertion cost
-                int scoreUp = nwArr[i][j-1] + this.gap; //deletion cost
-                int scoreDiag = nwArr[i-1][j-1] + ((s.charAt(i-1) == t.charAt(j-1)) ? this.match : this.mismatch);  //replacement cost
+                int scoreLeft = nwArr[i-1][j] + gap; //insertion cost
+                int scoreUp = nwArr[i][j-1] + gap; //deletion cost
+                int scoreDiag = nwArr[i-1][j-1] + ((s.charAt(i-1) == t.charAt(j-1)) ? match : mismatch);  //replacement cost
                 
                 HashMap<Character, Integer> possibleScores = new HashMap<Character, Integer>();
                 possibleScores.put('D', scoreLeft); possibleScores.put('I', scoreUp); possibleScores.put('E', scoreDiag);
@@ -116,8 +118,8 @@ public class NeedlemanWunsch
                 
                 //get best score according to cost function (standard=min)
                 int score = 0;
-                if (this.costf.equals("min")) score = values.get(0);
-                else if (this.costf.equals("max")) score = values.get(2);               
+                if (costf.equals("min")) score = values.get(0);
+                else if (costf.equals("max")) score = values.get(2);               
 
                 nwArr[i][j] = score;
 
@@ -129,7 +131,7 @@ public class NeedlemanWunsch
             }
         }
 
-        if (this.printTrace)
+        if (printTrace)
         {
             ArrayList<String> optimalAlignments = traceBack(s, t, opArr, m-1, n-1, "", "", new ArrayList<String>());
             System.out.printf("Co-optimal alignments (%d total)): \n", optimalAlignments.size() / 2);
@@ -145,11 +147,11 @@ public class NeedlemanWunsch
 
         }
         
-        if (this.printMax) System.out.printf("Total number of possible alignments: A('%s', '%t'): %d\n", s, t, maxAlignments(s.length(), t.length()));
+        if (printMax) System.out.printf("Total number of possible alignments: A('%s', '%t'): %d\n", s, t, maxAlignments(s.length(), t.length()));
 
-        if (this.printOptimal) System.out.printf("Optimal alignment score: %d\n\n", nwArr[m-1][n-1]);
+        if (printOptimal) System.out.printf("Optimal alignment score: %d\n\n", nwArr[m-1][n-1]);
 
-        if (this.printScores)
+        if (printScores)
         {
             System.out.println("Needleman-Wunsch scores matrix:\n");
             System.out.println("      " + String.join("  ", t.split("")));
@@ -192,7 +194,7 @@ public class NeedlemanWunsch
     }
 
     public static void main(String[] args) {
-        List<String> tmpValidCommands = Arrays.asList("-matrix", "-total", "-trace", "-costf", "-optimal", "-m", "-mm", "-g");
+        List<String> tmpValidCommands = Arrays.asList("-matrix", "-total", "-trace", "-costf", "-optimal", "-m", "-mm", "-g", "-cs");
         List<String> tmpHelpCommands = Arrays.asList("--help", "-help", "-h");
         HashSet<String> validCommands = new HashSet<String>(tmpValidCommands);
         HashSet<String> helpCommands = new HashSet<String>(tmpHelpCommands);
@@ -200,7 +202,7 @@ public class NeedlemanWunsch
         allCommands.addAll(helpCommands);
         HashSet<String> cmdArgs = new HashSet<String>(Arrays.asList(args));
 
-        CommandLineHelper helper = new CommandLineHelper();
+        CommandLineHelper helper = new CommandLineHelper("nw");
 
         boolean valid = helper.isValid(args, allCommands);
 
@@ -224,9 +226,10 @@ public class NeedlemanWunsch
             boolean printOptimal = cmdArgs.contains("-optimal") ? true : false;
             boolean printScores = cmdArgs.contains("-matrix") ? true : false;
             boolean printTrace = cmdArgs.contains("-trace") ? true : false;
+            boolean caseSensitive = cmdArgs.contains("-cs") ? true : false;
 
-            NeedlemanWunsch aligner = new NeedlemanWunsch(match, mismatch, gap, costf,
-                                                          printMax,printTrace, printScores, printOptimal);
+            NeedlemanWunsch aligner = new NeedlemanWunsch(match, mismatch, gap, costf, printMax,
+                                                          printTrace, printScores, printOptimal, caseSensitive);
             aligner.align(s, t);
         }
     }

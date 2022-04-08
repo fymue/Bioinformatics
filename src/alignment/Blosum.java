@@ -1,10 +1,7 @@
 package alignment;
 
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.util.*;
+import java.io.*;
 
 public class Blosum
 {
@@ -13,16 +10,16 @@ public class Blosum
 
     public Blosum(String blocksfile)
     {
-        this(blocksfile, true, false, null);
+        this(blocksfile, true, "");
     }
 
-    public Blosum(String blocksFile, boolean printBlosum, boolean writeBlosum, String outputFile)
+    public Blosum(String blocksFile, boolean printBlosum, String outputFile)
     {
         ArrayList<ArrayList<String>> blocks = readSequences(blocksFile);
         this.blosum = calcBlosum(blocks, aminos);
 
         if (printBlosum) printBlosum(blosum, aminos);
-        if (writeBlosum) writeBlosum(blosum, outputFile);
+        if (!outputFile.isEmpty()) writeBlosum(blosum, outputFile);
 
 
     }
@@ -142,7 +139,7 @@ public class Blosum
             
             //Step 5: Divide the observed sub frequencies by the estimated sub frequencies and normalize them (log2) (Original BLOSUM paper: s_ij-Matrix)
             //this matrix equals the BLOSUM
-            value = (double)Math.round(log2(qijMatrix.get(aminopair) / value));
+            value = (double)Math.round(2 * log2(qijMatrix.get(aminopair) / value));
             sijMatrix.put(aminopair, value);
         }
 
@@ -168,7 +165,7 @@ public class Blosum
                 if (as1 != curr)
                 {
                     curr = as1;
-                    start = false;
+                    start = true;
                     System.out.println();
                 }
                 if (start)
@@ -185,13 +182,56 @@ public class Blosum
 
     public void writeBlosum(HashMap<String, Double> blosum, String outputFile)
     {
-
+        try
+        {
+            BufferedWriter fout = new BufferedWriter(new FileWriter(outputFile));
+            fout.write("#observed amino acid\treplacement amino acid\tcost\n");
+            for (String aminopair: blosum.keySet())
+            {
+                String as1 = Character.toString(aminopair.charAt(0));
+                String as2 = Character.toString(aminopair.charAt(1));
+                String cost = Integer.toString((int)((double)blosum.get(aminopair)));
+                fout.write(as1 + "\t" + as2 + "\t" + cost + "\n");
+            }
+            fout.close();
+        }
+        catch (IOException e)
+        {
+            System.out.println("Error occured while writing to file!");
+            System.out.println(e);
+        }
     }
 
     public static void main(String[] args)
     {
-        String blocksFile = args[0];
-        Blosum blosum = new Blosum(blocksFile);
+        List<String> tmpValidCommands = Arrays.asList("-matrix", "-save");
+        List<String> tmpHelpCommands = Arrays.asList("--help", "-help", "-h");
+        HashSet<String> validCommands = new HashSet<String>(tmpValidCommands);
+        HashSet<String> helpCommands = new HashSet<String>(tmpHelpCommands);
+        HashSet<String> allCommands = validCommands;
+        allCommands.addAll(helpCommands);
+        HashSet<String> cmdArgs = new HashSet<String>(Arrays.asList(args));
+
+        CommandLineHelper helper = new CommandLineHelper("blosum");
+
+        boolean valid = helper.isValid(args, allCommands);
+
+        if (args.length == 0  || !valid)
+        {
+            System.out.println("Usage: Blosum.class [OPTIONS] path/to/blocks/file\n");
+            System.out.println("use --help, -help or -h to display usage help\n");
+        }
+        else if (args.length == 1 && helpCommands.contains(args[0])) helper.printHelp();
+
+        else if (args.length >= 2 && valid)
+        {
+            String blocksFile = args[args.length-1];
+            
+            String outputFile = helper.getArgsVal(args, "-save", "");
+            boolean printMatrix = cmdArgs.contains("-print") ? true : false;
+        
+            Blosum blosum = new Blosum(blocksFile, printMatrix, outputFile);
+        }
         
     }
 }
