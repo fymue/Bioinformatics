@@ -7,6 +7,7 @@ public class Node
     //Node class
     //only has "next" field -> contains edge(s) (characters) and node(s) they point to
     public LinkedHashMap<Character, Node> next;
+    public boolean isEndState = false;
 
     public Node()
     {
