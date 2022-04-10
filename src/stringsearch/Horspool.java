@@ -16,17 +16,6 @@ public class Horspool
         this.text = text;
     }
 
-    public boolean match(String t, String p)
-    {
-        System.out.println(t);
-        System.err.println(p);
-        for (int i=0; i<t.length(); i++)
-        {
-            if (t.charAt(i) != p.charAt(i)) return false;
-        }
-        return true;
-    }
-
     public HashMap<Character, Integer> makeSkipTable(String t, String p)
     {
         HashMap<Character, Integer> skip = new HashMap<Character, Integer>();
@@ -62,7 +51,7 @@ public class Horspool
         while (pos < n - m + 1)
         {
             String sub = t.substring(pos, pos+m);
-            if (match(sub, p)) hits.add(pos);
+            if (sub.equals(p)) hits.add(pos);
             pos += skip.get(t.charAt(pos+m-1));
         }
 
