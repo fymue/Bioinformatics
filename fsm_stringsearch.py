@@ -3,6 +3,7 @@ class Node:
     #only has "next" field -> contains edge(s) (characters) and node(s) they point to
 
     def __init__(self):
+        self.is_end_state = False
         self.next = {}
     
     def __str__(self): return str(self.next)
@@ -107,6 +108,77 @@ class Trie:
             prev = branches[i]
         
         print()
+
+class PatternFSM:
+    #build a finite state machine (FSM) based on pattern (string)
+    #enables O(m) text searching after FSM construction (m: length of text)
+
+    def __init__(self, p=""):
+        self.p = p
+    
+    def border(self, p):
+        #border function calculates the length of the longest prefix of p != p that is also a suffix of p
+        #this tells us which node to go back to when constructing the FSM
+
+        p_length = len(p)
+
+        for i in range(p_length-1, -1, -1):
+            prefix = p[:i]
+            suffix = p[p_length-i:]
+            
+            if prefix == suffix: return i
+        
+        return 0
+
+    def buildPatternFSM(self, p):
+        #build the FSM based on the pattern string
+
+        p_length = len(p)
+        n_nodes = p_length + 1
+
+        #create m+1 nodes (states; last node is accepting end state)
+        fsm = [Node() for _ in range(n_nodes)]
+        fsm[n_nodes-1].is_end_state = True
+
+        #go over all nodes and the entire alphabet (here: all ASCII characters)
+        for i in range(n_nodes):
+            for j in range(256):
+                #if the current character of the alphabet
+                #equals the character of the pattern at the current node
+                #create a new edge labeled with c to the next node;
+                #if not, calculate the border of the pattern concatenated with the current character
+                #and create a new edge back to the node at position "border"
+
+                c = chr(j)
+                if i < p_length and p[i] == c: fsm[i].next[c] = fsm[i+1]
+                else: fsm[i].next[c] = fsm[self.border(p+c)]
+        
+        return fsm
+
+    def search(self, t, p=""):
+        #search the pattern in the text using the pattern FSM
+
+        if not p: p = self.p
+        
+        self.patternFSM = self.buildPatternFSM(p)
+        curr_node  = self.patternFSM[0]
+
+        p_length = len(p)
+        hits = []
+
+        for i, c in enumerate(t):
+            #Start at the start node and input all the characters of the text one after another.
+            #If we reach the only accepting end state, the pattern was part of the text.
+            #If so, add the position of the 1st character of the pattern in the text to the output array.
+
+            nxt_node = curr_node.next[c]
+            if nxt_node.is_end_state: hits.append(i - p_length + 1)
+            curr_node = nxt_node
+
+        return hits
+
+    
+    
 
 
 
