@@ -18,7 +18,7 @@ public class Trie
     public Trie(String text)
     {
         this.text = text;
-        this.trie = this.constructTrie(text);
+        this.trie = constructTrie(text);
     }
 
     public Node constructTrie(String text)
@@ -35,7 +35,7 @@ public class Trie
             //walk along existing tree branches
             //check if the current suffix can be added to an existing branch
 
-            Node currNode = this.findBranchStart(trie, suffix);
+            Node currNode = findBranchStart(trie, suffix);
 
             if (this.start == -1) continue; //if suffix start lookup reached the end of a branch, skip the suffix
 
@@ -86,14 +86,14 @@ public class Trie
         //if we run this search after the whole trie has been constructed,
         //we know if the pattern exists in the text or not
         
-        this.findBranchStart(this.trie, pattern);
+        findBranchStart(this.trie, pattern);
         return  this.start == -1;
     }
 
     public ArrayList<String> reconstructBranches()
         {
             //overloaded function to initialize the values
-            return this.reconstructBranches(this.trie, "", new ArrayList<String>());
+            return reconstructBranches(this.trie, "", new ArrayList<String>());
         }
 
     public ArrayList<String> reconstructBranches(Node currNode, String branch, ArrayList<String> branches)
@@ -107,7 +107,7 @@ public class Trie
             branches.add(branch);
         }
 
-        for (char c: currNode.next.keySet()) this.reconstructBranches(currNode.next.get(c), branch + c, branches);
+        for (char c: currNode.next.keySet()) reconstructBranches(currNode.next.get(c), branch + c, branches);
 
         return branches;
     }
@@ -136,14 +136,14 @@ public class Trie
         //since its modeling a trie and we want to accept every substring of the input text,
         //every state is a final state
 
-        ArrayList<String> branches = this.reconstructBranches();
+        ArrayList<String> branches = reconstructBranches();
         String prev = branches.get(0);
 
         System.out.printf("\u00B7\n\u2514" + String.join("\u00B7", prev.split("")) + "\u00B7\n");
 
         for (int i=1; i<branches.size(); i++)
         {
-            String branch = this.adjustBranchPrint(branches.get(i), prev);
+            String branch = adjustBranchPrint(branches.get(i), prev);
             System.out.println(branch);
             prev = branches.get(i);
         }
