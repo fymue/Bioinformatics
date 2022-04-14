@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sys import argv
 from kneed import KneeLocator
-from sys import argv
 from random import random, randint
 
 def read_data(file, delimiter):
