@@ -22,12 +22,12 @@ def viterbi(states, emissions, transition_p, emission_p, observed_emissions, ini
     state_matrix = np.zeros(shape=(total_states, total_obs), dtype=np.int16) 
 
     #initialize the first column of the matrix (==start of the state path)
-    for s in range(len(states)): viterbi_matrix[s, 0] = initial_p[s] * emission_p[s][emissions[observed_emissions[0]]]
+    for s in range(total_states): viterbi_matrix[s, 0] = initial_p[s] * emission_p[s][emissions[observed_emissions[0]]]
 
     #calculate the probability of each state path (refer to the recursive definition of the algorithm for details)
     for o in range(1, total_obs):
-        for s in range(len(states)):
-            k = np.argmax(viterbi_matrix[:,o-1] * transition_p[:,s] * emission_p[s,])
+        for s in range(total_states):
+            k = np.argmax(viterbi_matrix[:,o-1] * transition_p[:,s] * emission_p[s, emissions[observed_emissions[o]]])
             viterbi_matrix[s, o] = viterbi_matrix[k, o-1] * transition_p[k, s] * emission_p[s, emissions[observed_emissions[o]]]
             state_matrix[s, o] = k
 
@@ -65,7 +65,7 @@ def main():
     initial_p = [0.5, 0.5]
 
     #observed_emissions: array-like, observed emissions to use for the calculation of the most likely state path
-    observed_emissions = ("Sonne", "Sonne", "Regen", "Regen", "Sonne", "Regen", "Sonne", "Sonne", "Regen")
+    observed_emissions = ("Sonne", "Sonne", "Regen", "Regen")
 
     print(viterbi(states, emissions, transition_p, emission_p, observed_emissions))
 
