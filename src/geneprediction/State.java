@@ -4,10 +4,14 @@ import java.util.HashMap;
 
 public class State
 {
+    //State class
+    //used to build a HMM
+    //has initial probability and emissions as well as emission probabilities
+    
     private String name;
     private double initialP;
     private String[] emissions;
-    private HashMap<String, Double> emissionP;
+    private HashMap<String, Double> emissionP = new HashMap<String, Double>();
 
     public State(String name, String[] emissions, double[] emissionP, double initialP)
     {
