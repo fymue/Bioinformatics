@@ -12,22 +12,19 @@ public class GenePredictor
     uses a HMM to estimate coding sequences (cds) and non-coding sequences on a sample genetic sequence.
     requires input sequence(es) to calculate the HMM parameters*/
     
-    private String sampleSeqFile;
-    private String trainingSeqFile;
     private String sampleSeq;
+    private String trainingSeq;
     private String cdsSeq;
     private HMM hmm;
 
-    public GenePredictor(String trainingSeqFile, String sampleSeqFile)
+    public GenePredictor(String trainingOrgId, String sampleOrgId, String saveDir)
     {
-        this.sampleSeqFile = sampleSeqFile;
-        this.trainingSeqFile = trainingSeqFile;
+        SeqDataParser dataParser = new SeqDataParser(trainingOrgId, sampleOrgId, saveDir);
+        this.trainingSeq = dataParser.trainingSeq;
+        this.cdsSeq = dataParser.cdsSeq;
+        this.sampleSeq = dataParser.sampleSeq;
+        this.hmm = createHMM(trainingSeq, cdsSeq);
 
-    }
-
-    public GenePredictor(String trainingSeq)
-    {
-        this(trainingSeq, "");
     }
 
     private double[][] calcEmissionProbabilities(HashMap<Character, Integer> emissions, String trainingSeq, String cdsSeq)
@@ -89,53 +86,20 @@ public class GenePredictor
         return new HMM(states, transitionP);
     }
 
-    private String getObservedEmissions(String sampleSeq)
-    {
-        String seqName = "";
-        String seq = "";
-
-        try
-        {
-            Scanner fin = new Scanner(new File(sampleSeq));
-            
-            while (fin.hasNextLine())
-            {
-                String l = fin.nextLine();
-                if (l.isBlank()) continue;
-                l = l.strip();
-                if (l.charAt(0) == '>')
-                {
-                    seqName = l.substring(1);
-                    continue;
-                }
-                seq += l;
-            }
-
-            fin.close();
-        }
-        catch (FileNotFoundException ex)
-        {
-            System.out.println("The file could not be found!");
-        }
-        
-        return seq;
-    }
-
     public String predictCDS() {return predictCDS(this.sampleSeq);}
 
     public String predictCDS(String sampleSeq)
     {
-        Viterbi viterbi = new Viterbi(this.hmm);
-        String observedEmissions = getObservedEmissions(sampleSeq);
-        return viterbi.calcBestStatePath(observedEmissions);
+        return new Viterbi(this.hmm).calcBestStatePath(sampleSeq);
     }
 
     public static void main(String[] args)
     {
-        String trainingSeq = "";
-        String sampleSeq = "";
+        String trainingOrgId = "";
+        String sampleOrgId = "";
+        String saveDir = "";
 
-        GenePredictor genepredictor = new GenePredictor(trainingSeq);
-        System.out.println(genepredictor.predictCDS(sampleSeq));
+        GenePredictor genepredictor = new GenePredictor(trainingOrgId, sampleOrgId, saveDir);
+        System.out.println(genepredictor.predictCDS());
     }
 }
