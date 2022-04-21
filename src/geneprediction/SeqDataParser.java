@@ -1,9 +1,13 @@
 package geneprediction;
 
+import java.util.zip.GZIPInputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.Buffer;
+import java.lang.Exception;
 import geneprediction.Downloader;
 import geneprediction.DownloadStatus;
 
@@ -17,10 +21,10 @@ public class SeqDataParser
 
     public SeqDataParser(String trainingOrgId, String sampleOrgId, String saveDir)
     {
-        fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
-        this.trainingSeq = getSeq(dlFileNames[0][0]);
-        this.cdsSeq = createCDSSeq(dlFileNames[0][1]);
-        this.sampleSeq = getSeq(dlFileNames[1][0]);
+        //fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
+        this.trainingSeq = getSeq(saveDir + dlFileNames[0][0]);
+        this.cdsSeq = createCDSSeq(saveDir + dlFileNames[0][1]);
+        this.sampleSeq = getSeq(saveDir + dlFileNames[1][0]);
         this.totalGenes = totalGenes;
     }
 
@@ -55,28 +59,37 @@ public class SeqDataParser
             Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
             BufferedReader buffered = new BufferedReader(decoder);
             String l = "";
-
             while (l != null)
             {
-                l = buffered.readLine();
-                if (l.isBlank() || l.startsWith("#") || l.startsWith("gene")) continue;
+                if (l.isBlank() || l.startsWith("#") || l.startsWith("gene"))
+                {
+                    l = buffered.readLine();
+                    continue;
+                }
                 
                 totalGenes++;
 
                 String[] lineContent = l.split("\t");
-                start = Integer.parseInt(lineContent[6]);
-                end = Integer.parseInt(lineContent[7]);
+                start = Integer.parseInt(lineContent[7]);
+                end = Integer.parseInt(lineContent[8]);
 
                 for (int i=0; i<start; i++) cdsSeq += "N";
                 for (int i=start; i<=end; i++) cdsSeq += "C";
+
+                l = buffered.readLine();
             }
 
             for (int i=end; i<trainingSeq.length(); i++) cdsSeq += "N";
-            fin.close();
+
+            buffered.close();
+            decoder.close();
+            gzipStream.close();
+            fileStream.close();
+
         }
-        catch (FileNotFoundException ex)
+        catch (Exception ex)
         {
-            System.out.println("The file could not be found!");
+            System.out.println(ex);
         }
 
         return cdsSeq;
@@ -97,21 +110,33 @@ public class SeqDataParser
 
             while (l != null)
             {
-                l = buffered.readLine();
-                if (l.isBlank()) continue;
+                if (l.isBlank())
+                {
+                    l = buffered.readLine();
+                    continue;
+                }
+
                 l = l.strip();
                 if (l.charAt(0) == '>')
                 {
                     seqName = l.substring(1);
+                    l = buffered.readLine();
                     continue;
                 }
                 seq += l;
+
+                l = buffered.readLine();
             }
 
+            buffered.close();
+            decoder.close();
+            gzipStream.close();
+            fileStream.close();
+
         }
-        catch (FileNotFoundException ex)
+        catch (Exception ex)
         {
-            System.out.println("The file could not be found!");
+            System.out.println(ex);
         }
         
         return seq;

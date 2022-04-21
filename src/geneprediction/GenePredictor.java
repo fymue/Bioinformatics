@@ -18,7 +18,7 @@ public class GenePredictor
     private HMM hmm;
 
     public GenePredictor(String trainingOrgId, String sampleOrgId, String saveDir)
-    {
+    {   
         SeqDataParser dataParser = new SeqDataParser(trainingOrgId, sampleOrgId, saveDir);
         this.trainingSeq = dataParser.trainingSeq;
         this.cdsSeq = dataParser.cdsSeq;
@@ -97,9 +97,9 @@ public class GenePredictor
     {
         String trainingOrgId = "";
         String sampleOrgId = "";
-        String saveDir = "";
+        String saveDir = "/home/fymue100/tmp/";
 
         GenePredictor genepredictor = new GenePredictor(trainingOrgId, sampleOrgId, saveDir);
-        System.out.println(genepredictor.predictCDS());
+        System.out.println(genepredictor.predictCDS().substring(0, 100));
     }
 }
