@@ -1,5 +1,6 @@
 package geneprediction;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
@@ -12,7 +13,7 @@ public class SeqDataParser
     String trainingSeq;
     String sampleSeq;
     int totalGenes = 0;
-    String[][] dlFileNames = {{"TrainingOrg_genome.txt", "TrainingOrg_features.txt"}, {"SampleOrg_genome.txt"}};
+    String[][] dlFileNames = {{"TrainingOrg_genome.txt.gz", "TrainingOrg_features.txt.gz"}, {"SampleOrg_genome.txt.gz"}};
 
     public SeqDataParser(String trainingOrgId, String sampleOrgId, String saveDir)
     {
@@ -49,11 +50,15 @@ public class SeqDataParser
 
         try
         {
-            Scanner fin = new Scanner(new File(trainingSeqFeaturesFile));
-            
-            while (fin.hasNextLine())
+            InputStream fileStream = new FileInputStream(trainingSeqFeaturesFile);
+            InputStream gzipStream = new GZIPInputStream(fileStream);
+            Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+            BufferedReader buffered = new BufferedReader(decoder);
+            String l = "";
+
+            while (l != null)
             {
-                String l = fin.nextLine();
+                l = buffered.readLine();
                 if (l.isBlank() || l.startsWith("#") || l.startsWith("gene")) continue;
                 
                 totalGenes++;
@@ -84,11 +89,15 @@ public class SeqDataParser
 
         try
         {
-            Scanner fin = new Scanner(new File(seqFile));
-            
-            while (fin.hasNextLine())
+            InputStream fileStream = new FileInputStream(seqFile);
+            InputStream gzipStream = new GZIPInputStream(fileStream);
+            Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+            BufferedReader buffered = new BufferedReader(decoder);
+            String l = "";
+
+            while (l != null)
             {
-                String l = fin.nextLine();
+                l = buffered.readLine();
                 if (l.isBlank()) continue;
                 l = l.strip();
                 if (l.charAt(0) == '>')
@@ -99,7 +108,6 @@ public class SeqDataParser
                 seq += l;
             }
 
-            fin.close();
         }
         catch (FileNotFoundException ex)
         {
@@ -108,5 +116,4 @@ public class SeqDataParser
         
         return seq;
     }
-    
 }
