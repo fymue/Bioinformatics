@@ -49,37 +49,38 @@ public class SeqDataParser
     private String createCDSSeq(String trainingSeqFeaturesFile)
     {
         String cdsSeq = "";
-        int start = 0;
-        int end = 0;
+        int prevStart = 0;
+        int startCDS = 0;
+        int endCDS = 0;
 
         try
         {
             InputStream fileStream = new FileInputStream(trainingSeqFeaturesFile);
             InputStream gzipStream = new GZIPInputStream(fileStream);
-            Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
+            Reader decoder = new InputStreamReader(gzipStream);
             BufferedReader buffered = new BufferedReader(decoder);
-            String l = "";
-            while (l != null)
+            String l;
+
+            while ((l = buffered.readLine()) != null)
             {
-                if (l.isBlank() || l.startsWith("#") || l.startsWith("gene"))
-                {
-                    l = buffered.readLine();
-                    continue;
-                }
+                if (l.isBlank() || l.startsWith("#") || l.startsWith("gene")) continue;
                 
                 totalGenes++;
 
                 String[] lineContent = l.split("\t");
-                start = Integer.parseInt(lineContent[7]);
-                end = Integer.parseInt(lineContent[8]);
+                startCDS = Integer.parseInt(lineContent[7]);
+                endCDS = Integer.parseInt(lineContent[8]);
 
-                for (int i=0; i<start; i++) cdsSeq += "N";
-                for (int i=start; i<=end; i++) cdsSeq += "C";
 
-                l = buffered.readLine();
+                for (int i=prevStart; i<startCDS; i++) cdsSeq += "N";
+                for (int i=startCDS; i<=endCDS; i++) cdsSeq += "C";
+
+                prevStart = endCDS + 1;
+                
+                if (totalGenes % 100 == 0) System.out.println(totalGenes);
             }
 
-            for (int i=end; i<trainingSeq.length(); i++) cdsSeq += "N";
+            for (int i=prevStart; i<trainingSeq.length(); i++) cdsSeq += "N";
 
             buffered.close();
             decoder.close();
@@ -91,7 +92,7 @@ public class SeqDataParser
         {
             System.out.println(ex);
         }
-
+        System.out.println(cdsSeq.substring(0, 200));
         return cdsSeq;
     }
 

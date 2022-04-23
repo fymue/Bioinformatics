@@ -10,7 +10,7 @@ public class GenePredictor
 {
     /*gene predictor class
     uses a HMM to estimate coding sequences (cds) and non-coding sequences on a sample genetic sequence.
-    requires input sequence(es) to calculate the HMM parameters*/
+    requires input sequence(s) to calculate the HMM parameters*/
     
     private String sampleSeq;
     private String trainingSeq;
@@ -95,8 +95,8 @@ public class GenePredictor
 
     public static void main(String[] args)
     {
-        String trainingOrgId = "";
-        String sampleOrgId = "";
+        String trainingOrgId = "GCF_000005845.2_ASM584v2"; //ncbi refseq ID + "_" + strain name
+        String sampleOrgId = "GCF_000008865.2_ASM886v2";
         String saveDir = "/home/fymue100/tmp/";
 
         GenePredictor genepredictor = new GenePredictor(trainingOrgId, sampleOrgId, saveDir);
