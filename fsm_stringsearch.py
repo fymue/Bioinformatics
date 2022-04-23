@@ -1,3 +1,5 @@
+#collection of fast string searching algorithms 
+
 class Node:
     #Node class
     #only has "next" field -> contains edge(s) (characters) and node(s) they point to
@@ -177,9 +179,54 @@ class PatternFSM:
 
         return hits
 
-    
-    
+class SuffixArray:
+    #make a suffix array from a given text
+    #enables fast searching if and how often a pattern exists in the text
 
+    def __init__(self, text):
+        self.text = text
+        self.suffix_array = self.make_suffix_array(text)
 
+    def make_suffix_array(self, t):
+        #create the suffix array
+
+        suffices = [(t[i:], i) for i in range(len(t))]
+        suffices.sort()
+        return [index for suffix, index in suffices]
+
+    def search(self, pattern):
+        #search if and how often a pattern exists in the text using binary search
+        #all suffices containing the pattern will be grouped together in the suffix array
+        #the first binary search finds the index of the first suffix in the suffix array containing the pattern
+        #the second binary search finds the index + 1 of the last suffix in the suffix array containing the pattern
+
+        #returns a list w/ the starting index/indices of the pattern(s) found in the text
+        #if the text doesn't contain the pattern, an empty list will be returned
+
+        l = 0
+        n = len(self.text)
+        p = len(pattern)
+        r = n
+
+        #first binary search
+        while l < r: 
+            mid = (l + r) // 2
+            if pattern > self.text[self.suffix_array[mid]:]:
+                l = mid + 1
+            else:
+                r = mid
+        
+        s = l #store the position (index) of the first suffix containing the pattern
+        r = n
+
+        #second binary search (find index + 1 of the last suffix containing the pattern)
+        while l < r:
+            mid = (l + r) // 2
+            if pattern == self.text[self.suffix_array[mid]:self.suffix_array[mid]+p]:
+                l = mid + 1
+            else:
+                r = mid
+
+        return sorted(self.suffix_array[s:r]) #sort the output indices so they are in increasing order
 
 
