@@ -21,7 +21,7 @@ public class SeqDataParser
 
     public SeqDataParser(String trainingOrgId, String sampleOrgId, String saveDir)
     {
-        //fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
+        fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
         this.trainingSeq = getSeq(saveDir + dlFileNames[0][0]);
         this.cdsSeq = createCDSSeq(saveDir + dlFileNames[0][1]);
         this.sampleSeq = getSeq(saveDir + dlFileNames[1][0]);
@@ -39,7 +39,7 @@ public class SeqDataParser
             String dlLink = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/";
             String orgNumberId = org.substring(4, 13);
             for (int o=0; o<orgNumberId.length()-3+1; o+=3) dlLink += orgNumberId.substring(o, o+3) + "/";
-            dlLink += trainingOrgId + "/";
+            dlLink += orgs[i] + "/" + orgs[i];
 
             for (int j=0; j<fileNames[i].length; j++) Downloader.download(saveDir + dlFileNames[i][j], dlLink + fileNames[i][j]);
         }
