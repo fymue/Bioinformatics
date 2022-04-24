@@ -1,19 +1,26 @@
 package geneprediction;
 
+import java.util.Scanner;
+import java.util.BitSet;
 import java.util.zip.GZIPInputStream;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.InputStream;
-import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.Buffer;
 import java.lang.Exception;
 import geneprediction.Downloader;
 import geneprediction.DownloadStatus;
 
+
 public class SeqDataParser
 {
-    String cdsSeq;
+    //download and parse the sequence data required to build and use the HMM
+    BitSet cdsSeq;
     String trainingSeq;
     String sampleSeq;
     int totalGenes = 0;
@@ -23,13 +30,15 @@ public class SeqDataParser
     {
         fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
         this.trainingSeq = getSeq(saveDir + dlFileNames[0][0]);
-        this.cdsSeq = createCDSSeq(saveDir + dlFileNames[0][1]);
         this.sampleSeq = getSeq(saveDir + dlFileNames[1][0]);
+        this.cdsSeq = createCDSSeq(saveDir + dlFileNames[0][1]);
         this.totalGenes = totalGenes;
     }
 
     private void fetchSeqData(String trainingOrgId, String sampleOrgId, String saveDir, String[][] dlFileNames)
     {
+        //download required files from NCBI FTP server
+
         String[] orgs = {trainingOrgId, sampleOrgId};
         String[][] fileNames = {{"_genomic.fna.gz ", "_feature_table.txt.gz"}, {"_genomic.fna.gz"}};
 
@@ -46,100 +55,91 @@ public class SeqDataParser
 
     }
 
-    private String createCDSSeq(String trainingSeqFeaturesFile)
+    private void decompressGzip(String sourceFile, String targetFile)
     {
-        String cdsSeq = "";
+        //decompress the downloaded NCBI gzip-Files before using them
+        
+        try (GZIPInputStream gis = new GZIPInputStream(new FileInputStream(sourceFile));
+             FileOutputStream fos = new FileOutputStream(targetFile))
+        {
+            // copy GZIPInputStream to FileOutputStream
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = gis.read(buffer)) > 0) fos.write(buffer, 0, len);
+        }
+        catch (IOException ex)
+        {
+            System.out.println(ex);
+        }
+    }
+
+    private BitSet createCDSSeq(String trainingSeqFeaturesFile)
+    {   
+        /*create the mapping sequence to the trainin sequence showing which regions are (non-)coding.
+          Bases that are part of a coding region are represented by "true" bits in a BitSet object,
+          bases of non-coding regions are "false" bits.*/
+
         int prevStart = 0;
         int startCDS = 0;
         int endCDS = 0;
+        int totalSeqLength = this.trainingSeq.length();
+        String decompressedFeaturesFile = trainingSeqFeaturesFile.replace(".gz", "");
+
+        BitSet cdsSeq = new BitSet(totalSeqLength); //create BitSet with the same length as the training sequence (1 bit per base)
+        
+        //decompress the gzip file
+        decompressGzip(trainingSeqFeaturesFile, decompressedFeaturesFile);
 
         try
         {
-            InputStream fileStream = new FileInputStream(trainingSeqFeaturesFile);
-            InputStream gzipStream = new GZIPInputStream(fileStream);
-            Reader decoder = new InputStreamReader(gzipStream);
-            BufferedReader buffered = new BufferedReader(decoder);
+            BufferedReader fin = new BufferedReader(new InputStreamReader(new FileInputStream(decompressedFeaturesFile)));
             String l;
 
-            while ((l = buffered.readLine()) != null)
+            //read the sequence features file (contains positions of every gene etc.)
+            while ((l = fin.readLine()) != null)
             {
                 if (l.isBlank() || l.startsWith("#") || l.startsWith("gene")) continue;
                 
                 totalGenes++;
 
                 String[] lineContent = l.split("\t");
-                startCDS = Integer.parseInt(lineContent[7]);
-                endCDS = Integer.parseInt(lineContent[8]);
-
-
-                for (int i=prevStart; i<startCDS; i++) cdsSeq += "N";
-                for (int i=startCDS; i<=endCDS; i++) cdsSeq += "C";
-
-                prevStart = endCDS + 1;
+                startCDS = Integer.parseInt(lineContent[7]); //start position of the current gene
+                endCDS = Integer.parseInt(lineContent[8]); //end position of the current gene
                 
-                if (totalGenes % 100 == 0) System.out.println(totalGenes);
+                cdsSeq.set(startCDS, endCDS+1); //set bits between start and end to "true"
             }
-
-            for (int i=prevStart; i<trainingSeq.length(); i++) cdsSeq += "N";
-
-            buffered.close();
-            decoder.close();
-            gzipStream.close();
-            fileStream.close();
-
+            
+            fin.close();
         }
         catch (Exception ex)
         {
             System.out.println(ex);
         }
-        System.out.println(cdsSeq.substring(0, 200));
         return cdsSeq;
     }
 
     private String getSeq(String seqFile)
     {
-        String seqName = "";
+        //read the sequence fasta files to a string
         String seq = "";
+        String decompressedSeqFile = seqFile.replace(".gz", "");
+
+        //decompress the gzip-file
+        decompressGzip(seqFile, decompressedSeqFile);
 
         try
         {
-            InputStream fileStream = new FileInputStream(seqFile);
-            InputStream gzipStream = new GZIPInputStream(fileStream);
-            Reader decoder = new InputStreamReader(gzipStream, "UTF-8");
-            BufferedReader buffered = new BufferedReader(decoder);
-            String l = "";
-
-            while (l != null)
-            {
-                if (l.isBlank())
-                {
-                    l = buffered.readLine();
-                    continue;
-                }
-
-                l = l.strip();
-                if (l.charAt(0) == '>')
-                {
-                    seqName = l.substring(1);
-                    l = buffered.readLine();
-                    continue;
-                }
-                seq += l;
-
-                l = buffered.readLine();
-            }
-
-            buffered.close();
-            decoder.close();
-            gzipStream.close();
-            fileStream.close();
-
+            //read the sequence to a string
+            Path file = Path.of(decompressedSeqFile);
+            System.out.println(file);
+            seq = Files.readString(file);
+            seq = seq.substring(seq.indexOf("\n")).replaceAll("\n", "");
         }
         catch (Exception ex)
         {
             System.out.println(ex);
         }
-        
+                
         return seq;
     }
 }

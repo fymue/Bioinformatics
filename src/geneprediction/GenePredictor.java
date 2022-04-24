@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Arrays;
+import java.util.BitSet;
 
 public class GenePredictor
 {
@@ -14,29 +16,31 @@ public class GenePredictor
     
     private String sampleSeq;
     private String trainingSeq;
-    private String cdsSeq;
+    private BitSet cdsSeq;
     private HMM hmm;
+    private int totalGenes;
 
     public GenePredictor(String trainingOrgId, String sampleOrgId, String saveDir)
     {   
         SeqDataParser dataParser = new SeqDataParser(trainingOrgId, sampleOrgId, saveDir);
-        this.trainingSeq = dataParser.trainingSeq;
-        this.cdsSeq = dataParser.cdsSeq;
         this.sampleSeq = dataParser.sampleSeq;
-        this.hmm = createHMM(trainingSeq, cdsSeq);
+        this.hmm = createHMM(dataParser.trainingSeq, dataParser.cdsSeq, dataParser.totalGenes);
 
     }
 
-    private double[][] calcEmissionProbabilities(HashMap<Character, Integer> emissions, String trainingSeq, String cdsSeq)
+    private double[][] calcEmissionProbabilities(HashMap<Character, Integer> emissions, String trainingSeq, BitSet cdsSeq)
     {
-        double[][] emissionP = new double[2][emissions.size()];
+        //calculate the emission probabilites of every state of the HMM
+
+        double[][] emissionP = new double[2][4];
         int totalCoding = 0;
         int totalNonCoding = 0;
 
         for (int i=0; i<trainingSeq.length(); i++)
         {
             char c = trainingSeq.charAt(i);
-            if (cdsSeq.charAt(i) == 'C')
+
+            if (cdsSeq.get(i)) //check if bit at current index is set to "true" (meaning its part of a cds)
             {
                 totalCoding++;
                 emissionP[0][emissions.get(c)]++;
@@ -56,8 +60,10 @@ public class GenePredictor
 
     private double[][] calcTransitionProbabilities(String trainingSeq, int totalGenes)
     {
+        //calculate the transition probabilites between every state of the HMM
+        
         double[][] transitionP = new double[2][2];
-        double transitionStateProb = totalGenes / trainingSeq.length();
+        double transitionStateProb = (double)totalGenes / trainingSeq.length();
         double sameStateProb = 1 - transitionStateProb;
 
         transitionP[0][0] = sameStateProb;
@@ -68,8 +74,10 @@ public class GenePredictor
         return transitionP;
     }
 
-    private HMM createHMM(String trainingSeq, String cdsSeq)
+    private HMM createHMM(String trainingSeq, BitSet cdsSeq, int totalGenes)
     {
+        //create the HMM
+
         char[] emissions = {'A', 'T', 'G', 'C'};
         HashMap<Character, Integer> emissionsLookup = new HashMap<Character, Integer>();
 
@@ -80,9 +88,8 @@ public class GenePredictor
         State[] states = {new State("C", emissions, emissionP[0], 0.0),
                           new State("N", emissions, emissionP[1], 1.0)};
         
-        int totalGenes = 0;
         double[][] transitionP = calcTransitionProbabilities(trainingSeq, totalGenes);
-
+        
         return new HMM(states, transitionP);
     }
 
@@ -90,6 +97,7 @@ public class GenePredictor
 
     public String predictCDS(String sampleSeq)
     {
+        //run the Viterbi algorithm using the sample sequence as observed emissions
         return new Viterbi(this.hmm).calcBestStatePath(sampleSeq);
     }
 
@@ -100,6 +108,7 @@ public class GenePredictor
         String saveDir = "/home/fymue100/tmp/";
 
         GenePredictor genepredictor = new GenePredictor(trainingOrgId, sampleOrgId, saveDir);
-        System.out.println(genepredictor.predictCDS().substring(0, 100));
+        String output = genepredictor.predictCDS();
+        System.out.println(output.substring(0,2000));
     }
 }
