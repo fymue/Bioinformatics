@@ -2,6 +2,7 @@ package geneprediction;
 
 import geneprediction.State;
 import geneprediction.HMM;
+import java.lang.StringBuffer;
 
 public class Viterbi
 {
@@ -134,7 +135,7 @@ public class Viterbi
         double[][] viterbiMatrix = new double[totalStates][totalObservations];
 
         //matrix to store the indices of the states associated with the current best path probability (used in backtracing later)
-        int[][] stateMatrix = new int[totalStates][totalObservations];   
+        int[][] stateMatrix = new int[totalStates][totalObservations];
 
         //initialize the first column of the matrix (==start of the state path)
         for (int s=0; s<totalStates; s++) viterbiMatrix[s][0] = states[s].getInitialP() * states[s].getEmissionProbalities().get(Character.toString(observedEmissions.charAt(0))); 
@@ -168,7 +169,8 @@ public class Viterbi
             k = stateMatrix[k][o];
         }
 
-        return bestStatePath;
+        //reverse the bestStatePath string (since we started the backtrace at the end) and return it
+        return new StringBuffer(bestStatePath).reverse().toString();
     }
 
     public void printMatrix(double[][] m)
