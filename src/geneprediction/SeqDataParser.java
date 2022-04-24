@@ -1,17 +1,13 @@
 package geneprediction;
 
-import java.util.Scanner;
 import java.util.BitSet;
 import java.util.zip.GZIPInputStream;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.Buffer;
 import java.lang.Exception;
 import geneprediction.Downloader;
 import geneprediction.DownloadStatus;
@@ -28,7 +24,7 @@ public class SeqDataParser
 
     public SeqDataParser(String trainingOrgId, String sampleOrgId, String saveDir)
     {
-        fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
+        //fetchSeqData(trainingOrgId, sampleOrgId, saveDir, dlFileNames);
         this.trainingSeq = getSeq(saveDir + dlFileNames[0][0]);
         this.sampleSeq = getSeq(saveDir + dlFileNames[1][0]);
         this.cdsSeq = createCDSSeq(saveDir + dlFileNames[0][1]);
@@ -67,7 +63,7 @@ public class SeqDataParser
             int len;
             while ((len = gis.read(buffer)) > 0) fos.write(buffer, 0, len);
         }
-        catch (IOException ex)
+        catch (Exception ex)
         {
             System.out.println(ex);
         }
@@ -131,7 +127,6 @@ public class SeqDataParser
         {
             //read the sequence to a string
             Path file = Path.of(decompressedSeqFile);
-            System.out.println(file);
             seq = Files.readString(file);
             seq = seq.substring(seq.indexOf("\n")).replaceAll("\n", "");
         }

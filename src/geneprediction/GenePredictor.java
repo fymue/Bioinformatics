@@ -4,8 +4,6 @@ import geneprediction.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
-import java.util.Scanner;
-import java.util.Arrays;
 import java.util.BitSet;
 
 public class GenePredictor
@@ -109,6 +107,5 @@ public class GenePredictor
 
         GenePredictor genepredictor = new GenePredictor(trainingOrgId, sampleOrgId, saveDir);
         String output = genepredictor.predictCDS();
-        System.out.println(output.substring(0,2000));
     }
 }
