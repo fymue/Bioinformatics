@@ -189,10 +189,7 @@ class SuffixArray:
 
     def make_suffix_array(self, t):
         #create the suffix array
-
-        suffices = [(t[i:], i) for i in range(len(t))]
-        suffices.sort()
-        return [index for suffix, index in suffices]
+        return sorted(list(range(len(t))), key= lambda i: t[i:])
 
     def search(self, pattern):
         #search if and how often a pattern exists in the text using binary search
