@@ -42,7 +42,7 @@ def max_alignments_iter(m, n):
 
 def needleman_wunsch(s, t, match=0, mismatch=1, gap=1, costf=min, print_scores=False, print_trace=False, print_max=False, print_optimal=False):
     print(f"\nAlignment of '{s}' and '{t}' using the Needleman-Wunsch algorithm")
-    print(f"Cost parameters: match = {match}, mismatch = {mismatch}, gap = {gap}\n\n")
+    print(f"Scoring parameters: match = {match}, mismatch = {mismatch}, gap = {gap}\n\n")
 
     m = len(s) + 1 #number of rows, s: 1st sequence
     n = len(t) + 1 #number of columns, t: 2nd sequence
@@ -93,7 +93,7 @@ def needleman_wunsch(s, t, match=0, mismatch=1, gap=1, costf=min, print_scores=F
         i = m - 1
         j = n - 1
         optimal_alignments = nw_traceback(op_arr, s, t, i, j, "", "", [])
-        print(f"Co-optimal alignments ({len(optimal_alignments)} total): \n")
+        print(f"(Co-)optimal alignment(s) ({len(optimal_alignments)} total): \n")
         for al1, al2, in optimal_alignments:
             print(al1[::-1])
             print(al2[::-1])
@@ -110,9 +110,9 @@ def nw_traceback(op_arr, s, t, i, j, al1, al2, alignments):
     if "E" in op_arr[i][j]: #if replacement was done, go up diagonally
         nw_traceback(op_arr, s, t, i-1, j-1, al1 + s[i-1], al2 + t[j-1], alignments)
     if "I" in op_arr[i][j]: #if insertion was done, go to the left
-        nw_traceback(op_arr, s, t, i, j-1, al1 + "_", al2 + t[j-1], alignments)
+        nw_traceback(op_arr, s, t, i, j-1, al1 + "-", al2 + t[j-1], alignments)
     if "D" in op_arr[i][j]: #if deletion was done, go up
-        nw_traceback(op_arr, s, t, i-1, j, al1 + s[i-1], al2 + "_", alignments)
+        nw_traceback(op_arr, s, t, i-1, j, al1 + s[i-1], al2 + "-", alignments)
 
     return alignments
 
