@@ -1,4 +1,4 @@
-package uebung4;
+package fastagen;
 
 import java.lang.Exception;
 
