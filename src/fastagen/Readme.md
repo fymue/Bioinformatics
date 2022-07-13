@@ -1,4 +1,4 @@
-# FastaGen
+# FastaGen (Uni Homework project)
 
 ## Kompilierung und Ausführung des Programmes
 
