@@ -43,7 +43,7 @@ public class CommandLineParser
 
         else if (args.length == 0  || !this.seemsValid) //if command line input was syntactically wrong, print this
         {
-            System.out.println("Usage: java -cp /path/to/bin uebung4.Main (read|generate) (Protein|Genome) [Options]\n");
+            System.out.println("Usage: java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
             System.out.println("use --help, -help or -h to display usage help\n");
             this.goAhead = false; //InputEvaluator doesn't need to even start trying to process the input
         }
@@ -57,7 +57,7 @@ public class CommandLineParser
 
     private void printHelp()
     {
-        System.out.println("Usage: java -cp /path/to/bin uebung4.Main (read|generate) (Protein|Genome) [Options]\n");
+        System.out.println("Usage: java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
         System.out.println("(read|generate) specifies whether an existing Fasta file should be read or a new one should be generated");
         System.out.println("(Protein|Genome) specifies which alphabet to use for the sequence generation\n");
         System.out.println("'generate' Mode Options:\n");
