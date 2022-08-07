@@ -25,7 +25,12 @@ public class InputEvaluator
     {
         CommandLineParser parser = new CommandLineParser(args);
 
-        if (parser.goAhead) this.isValid = evaluateInput(parser, args);
+        if (parser.goAhead && parser.guiMode)
+        {
+            this.isValid = true;
+            this.collector.programInterface = "gui";
+        }
+        else if (parser.goAhead) this.isValid = evaluateInput(parser, args);
     }
 
     /**

@@ -44,5 +44,10 @@ public class InputCollector
      * states, whether or not nucleotide sequence properties should be written to the Fasta file
      */
     protected boolean writeProperties;
+
+    /**
+     * states, what interface (GUI or CLI) the program should use (default: CLI)
+     */
+    protected String programInterface = "cli";
     
 }

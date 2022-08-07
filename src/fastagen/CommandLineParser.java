@@ -18,7 +18,7 @@ public class CommandLineParser
      * states, whether or not the command line input should be further 
      * evaluated to see if the logic is correct
      */
-    boolean goAhead;
+    boolean goAhead, guiMode = false;
 
     private String[] args;
 
@@ -35,15 +35,23 @@ public class CommandLineParser
         //check if command line arguments have correct syntax (doesn't check for correct logic yet)
         this.seemsValid = this.isValid();
 
-        if (args.length == 1 && validCommands.contains(args[0])) //check if help message was requested
+        if (args.length == 1 && helpCommands.contains(args[0])) //check if help message was requested
         {
             this.printHelp();
             this.goAhead = false; //again, InputEvaluator doesn't need to start trying to process the input
         }
 
+        else if (args.length == 1 && args[0].toLowerCase().equals("gui")) //check if program should run in GUI mode
+        {
+            this.guiMode = true;
+            this.goAhead = true;
+        }
+
         else if (args.length == 0  || !this.seemsValid) //if command line input was syntactically wrong, print this
         {
-            System.out.println("Usage: java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
+            System.out.println("This program can be used from both the command line (CLI) as well as from a user interface (GUI):\n");
+            System.out.println("Usage (CLI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
+            System.out.println("Usage (GUI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main GUI \n");
             System.out.println("use --help, -help or -h to display usage help\n");
             this.goAhead = false; //InputEvaluator doesn't need to even start trying to process the input
         }
@@ -57,7 +65,8 @@ public class CommandLineParser
 
     private void printHelp()
     {
-        System.out.println("Usage: java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
+        System.out.println("Usage (CLI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
+        System.out.println("Usage (GUI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main GUI\n");
         System.out.println("(read|generate) specifies whether an existing Fasta file should be read or a new one should be generated");
         System.out.println("(Protein|Genome) specifies which alphabet to use for the sequence generation\n");
         System.out.println("'generate' Mode Options:\n");
