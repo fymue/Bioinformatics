@@ -42,13 +42,8 @@ public class Main extends Application
         this.primaryStage = primaryStage;
         Parent root = FXMLLoader.load(getClass().getResource("startPane.fxml"));
         primaryStage.setTitle("FastaGen");
-        primaryStage.setScene(new Scene(root, 640, 480));
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
         primaryStage.show();
-    }
-
-    private void switchScene(String fxmlFile) throws Exception
-    {
-        Parent pane = FXMLLoader.load(getClass().getResource(fxmlFile));
-        this.primaryStage.getScene().setRoot(pane);
     }
 }
