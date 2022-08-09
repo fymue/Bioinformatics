@@ -21,6 +21,8 @@ public class InputEvaluator
 
     private int maxCores = Runtime.getRuntime().availableProcessors(); //get maximum available cpu cores
 
+    public InputEvaluator() {}
+
     public InputEvaluator(String[] args)
     {
         CommandLineParser parser = new CommandLineParser(args);
@@ -38,7 +40,7 @@ public class InputEvaluator
      * @param args the provided command line arguments
      * @return a boolean indicating whether the entire input was correct
      */
-    private boolean evaluateInput(CommandLineParser parser, String[] args)
+    public boolean evaluateInput(CommandLineParser parser, String[] args)
     {
         /* check if the command line input is correct
         *  and store the user input from args in the InputCollector object
@@ -136,6 +138,9 @@ public class InputEvaluator
 
         boolean writeProperties = parser.checkOption("--write-properties", "");
         this.collector.writeProperties = writeProperties;
+
+        String fastaHeaderPrefix = parser.getArgVal("--header", "", "randomSequence");
+        this.collector.fastaHeaderPrefix = ">" + fastaHeaderPrefix;
 
         return true; //if we get to this point, the user input is correct
     }  

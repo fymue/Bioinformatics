@@ -28,9 +28,10 @@ public interface Fasta
      * @param interval the minimal and maximal length of a random sequence
      * @param nCores the number of cpu cores to distribute the threads to
      * @param quiet states, whether or not runtime information should be printed to the console
+     * @param fastaHeaderPrefix specified, which prefix to put in the header of every Fasta entry
      * @return a <code>SequenceCollection</code> object storing the IDs as well as the generated <code>Sequence</code> objects
      */
-    SequenceCollection<String, Sequence> generateEntries(int totalEntries, int[] interval, int nCores, boolean quiet);
+    SequenceCollection<String, Sequence> generateEntries(int totalEntries, int[] interval, int nCores, boolean quiet, String fastaHeaderPrefix);
 
     /**
      * returns the type and characters of the alphabet specified by the user

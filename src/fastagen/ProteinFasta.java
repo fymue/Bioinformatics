@@ -14,7 +14,7 @@ public class ProteinFasta extends AbstractFasta
     {
         super.alphabet = alphabet;
         super.fileName = c.fileName;
-        super.entries = generateEntries(c.totalEntries, c.interval, c.nCores, c.quiet);
+        super.entries = generateEntries(c.totalEntries, c.interval, c.nCores, c.quiet, c.fastaHeaderPrefix);
     }
 
     @Override

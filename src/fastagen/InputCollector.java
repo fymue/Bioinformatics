@@ -49,5 +49,10 @@ public class InputCollector
      * states, what interface (GUI or CLI) the program should use (default: CLI)
      */
     protected String programInterface = "cli";
+
+    /**
+     * prefix for the unique headers of every generated Fasta entry
+     */
+    protected String fastaHeaderPrefix;
     
 }

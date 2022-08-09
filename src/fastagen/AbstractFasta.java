@@ -40,7 +40,7 @@ public abstract class AbstractFasta implements Fasta
     public SequenceCollection<String, Sequence> getEntries() {return entries;}
 
     @Override
-    public SequenceCollection<String, Sequence> generateEntries(int totalEntries, int[] interval, int nCores, boolean quiet)
+    public SequenceCollection<String, Sequence> generateEntries(int totalEntries, int[] interval, int nCores, boolean quiet, String fastaHeaderPrefix)
     {
         SequenceCollection<String, Sequence> entries = new SequenceCollection<>();
 
@@ -51,7 +51,7 @@ public abstract class AbstractFasta implements Fasta
 
         for (int i=0; i<totalEntries; i++)
         {
-            String header = ">randomSequence" + (i+1); //create a unique header for the current sequence
+            String header = fastaHeaderPrefix + (i+1); //create a unique header for the current sequence
             SequenceGenerator seq = new SequenceGenerator(header, interval, alphabet, quiet); //Callable object
             
             //add the callable to the thread pool and let the executor invoke its call method

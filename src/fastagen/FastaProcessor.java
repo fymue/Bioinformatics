@@ -195,7 +195,7 @@ public class FastaProcessor
             System.out.println(id + ": " + currSeq.getSequence());
 
             //if sequence is genomic, also print its properties (using modified toString() of the Sequence class)
-            if (currSeq.isGenomic) System.out.println(currSeq); 
+            if (currSeq.isGenomic && input.collector.writeProperties) System.out.println(currSeq); 
         }
     }
     //if an output file was provided, write the entries to that file

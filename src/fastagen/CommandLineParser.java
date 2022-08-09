@@ -25,7 +25,7 @@ public class CommandLineParser
     private HashSet<String> helpCommands = new HashSet<>(Arrays.asList("--help", "-help", "-h"));
     private HashSet<String> validCommands = new HashSet<>(Arrays.asList("--entries", "-e", "--threads", "-t",
                                                                         "--out", "-o", "--length", "--quiet",
-                                                                        "-l", "-q", "--write-properties"));
+                                                                        "-l", "-q", "--write-properties", "--header"));
 
     public CommandLineParser(String[] args)
     {
@@ -80,6 +80,7 @@ public class CommandLineParser
         System.out.println("-o, --out \t\t\twrite read entries to a new file 'inputfile_parsed.fna'");
         System.out.println("-q, --quiet\t\t\tdon't print any runtime (thread) information to the console");
         System.out.println("--write-properties\t\talso write the nucleotide sequence properties to the Fasta file\n");
+        System.out.println("--header <prefix>\t\t\tadd a prefix to the header of every generated Fasta entry\n");
 
     }
 
