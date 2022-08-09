@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
@@ -14,21 +16,23 @@
          <font>
             <Font size="30.0" />
          </font></Text>
-      <Text layoutX="34.0" layoutY="104.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Pfad zur Fasta-Datei(en) an oder auf Öffnen klicken:" wrappingWidth="432.7999633789061">
+      <Text layoutX="34.0" layoutY="101.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Pfad zur Fasta-Datei(en) an oder auf Öffnen klicken:" wrappingWidth="432.7999633789061">
          <font>
             <Font size="12.0" />
          </font></Text>
-      <Button layoutX="432.0" layoutY="123.0" mnemonicParsing="false" text="Einlesen" />
-      <Button layoutX="513.0" layoutY="123.0" mnemonicParsing="false" text="Öffnen" />
-      <Button fx:id="rPdone" layoutX="516.0" layoutY="334.0" mnemonicParsing="false" onAction="#close" text="Fertig" />
+      <Button fx:id="rPreadFiles" layoutX="432.0" layoutY="152.0" mnemonicParsing="false" text="Einlesen" />
+      <Button fx:id="rPopenDialog" layoutX="511.0" layoutY="152.0" mnemonicParsing="false" text="Öffnen" />
+      <Button fx:id="rPdone" layoutX="514.0" layoutY="366.0" mnemonicParsing="false" onAction="#close" text="Fertig" />
       <Button fx:id="rPback" layoutX="34.0" layoutY="39.0" mnemonicParsing="false" onAction="#back" text="Zurück" />
-      <ListView layoutX="34.0" layoutY="114.0" prefHeight="52.0" prefWidth="290.0" />
-      <TableView layoutX="34.0" layoutY="180.0" prefHeight="200.0" prefWidth="290.0">
+      <ListView layoutX="34.0" layoutY="112.0" prefHeight="67.0" prefWidth="290.0" />
+      <TableView layoutX="34.0" layoutY="193.0" prefHeight="200.0" prefWidth="290.0">
         <columns>
           <TableColumn prefWidth="75.0" text="C1" />
           <TableColumn prefWidth="75.0" text="C2" />
         </columns>
       </TableView>
-      <Button layoutX="371.0" layoutY="334.0" mnemonicParsing="false" text="Plotte Properties" />
+      <Button fx:id="rPplot" layoutX="372.0" layoutY="366.0" mnemonicParsing="false" text="Plotte Properties" />
+      <ChoiceBox fx:id="rPmodeBox" layoutX="489.0" layoutY="112.0" prefHeight="26.0" prefWidth="83.0" />
+      <Label layoutX="432.0" layoutY="116.0" text="Modus:" />
    </children>
 </AnchorPane>
