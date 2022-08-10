@@ -17,6 +17,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 
 import java.net.URL;
 
@@ -27,6 +29,7 @@ import java.util.HashMap;
 import java.io.PrintStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 
 /**
  * this class serves as the Controller class for the "read mode" scene of the GUI
@@ -34,7 +37,8 @@ import java.io.OutputStream;
 public class GenPaneController implements Initializable
 {
     private FastaProcessor processor;
-    private PrintStream ps;
+    private PrintStream stdout;
+    private ByteArrayOutputStream stderr;
     private boolean writeProperties = false;
     private InputEvaluator input = new InputEvaluator();
 
@@ -58,7 +62,8 @@ public class GenPaneController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle rb)
     {
-        ps = new PrintStream(new Console(gPtextArea)); // crreate PrintStream object to later print results to TextArea
+        stdout = new PrintStream(new Console(gPtextArea)); // crreate PrintStream object to later print results to TextArea
+        stderr = new ByteArrayOutputStream();
 
         // fill ChoiceBoxes and TextFields with initial values
         gPalphabetBox.setItems(FXCollections.observableArrayList("Genome", "Protein"));
@@ -76,8 +81,9 @@ public class GenPaneController implements Initializable
         gPdone.setVisible(false);
 
         // set stdout and stderr to custom PrintStream
-        System.setOut(ps);
-        System.setErr(ps);
+        
+        System.setErr(new PrintStream(stderr));
+        System.setOut(stdout);
     }
 
     /**
@@ -115,18 +121,31 @@ public class GenPaneController implements Initializable
      * calculate the sequence properties and store them
      */
     @FXML
-    public void startCalc()
+    public void startCalc() throws IOException
     {
         // generate the Fasta entries and start the calculations
         gPtextArea.clear();
-        gPstartCalc.setVisible(false);
-        gPdone.setVisible(true);
-        gPsaveAs.setDisable(false);
 
         String[] args = convertGUIInputToCLIInput();
         boolean isValid = input.evaluateInput(new CommandLineParser(args), args);
 
-        if (isValid) processor = new FastaProcessor(input);
+        if (isValid)
+        {
+            processor = new FastaProcessor(input);
+            gPstartCalc.setVisible(false);
+            gPdone.setVisible(true);
+            gPsaveAs.setDisable(false);
+        }
+        else
+        {
+            /*
+             * if an exception was thrown/error message was printed to stderr,
+             * read the buffer and create a popup displaying the error message
+             */
+            String errorMsg = stderr.toString();
+            stderr.reset();
+            createErrorPopup(errorMsg);
+        }
     }
 
     /**
@@ -203,6 +222,16 @@ public class GenPaneController implements Initializable
 
         return args.toArray(new String[args.size()]);
     }
+
+    private void createErrorPopup(String errorMsg)
+    {
+        // create a popup window displaying an error message
+        Alert alert = new Alert(AlertType.ERROR);
+        alert.setTitle("Fehler");
+        alert.setHeaderText(null); // prevent display of header text
+        alert.setContentText(errorMsg);
+        alert.showAndWait();
+    }
     
 }
 
@@ -211,16 +240,16 @@ public class GenPaneController implements Initializable
  */
 class Console extends OutputStream
 {
-    private TextArea console;
+    private TextArea textArea;
 
-    public Console(TextArea console)
+    public Console(TextArea textArea)
     {
-        this.console = console;
+        this.textArea = textArea;
     }
 
-    public void appendText(String valueOf)
+    public void appendText(String stdout)
     {
-        Platform.runLater(() -> console.appendText(valueOf));
+        Platform.runLater(() -> textArea.appendText(stdout));
     }
 
     public void write(int b) throws IOException
