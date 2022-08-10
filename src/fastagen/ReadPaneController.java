@@ -14,6 +14,9 @@ import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 
 
+/**
+ * this class serves as the Controller class for the "read mode" scene of the GUI
+ */
 public class ReadPaneController implements Initializable
 {
 
@@ -23,6 +26,9 @@ public class ReadPaneController implements Initializable
     @FXML
     ChoiceBox<String> rPmodeBox;
 
+    /**
+     * closes the window
+     */
     @FXML
     public void close()
     {
@@ -30,12 +36,21 @@ public class ReadPaneController implements Initializable
         stage.close();
     }
 
+    /**
+     * goes back to the initial scene
+     */
     @FXML
     public void back() throws Exception
     {
         switchPane(rPback, "startPane.fxml");
     }
 
+    /**
+     * implements the inherided method of the <code>Initializable</code> interface
+     * and initializes the scene and fills objects with the appropriate initial values
+     * @param url required parameter
+     * @param rb required parameter
+     */
     @Override
     public void initialize(URL url, ResourceBundle rb)
     {

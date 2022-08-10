@@ -36,6 +36,12 @@ public class Main extends Application
         
     } 
 
+    /**
+     * overrides the start method of the JavaFX <code>Application</code> class and loads/shows
+     * the FXML file of the start scene
+     * @param primaryStage the initial Stage for the <code>Application</code> class (is automatically provides)
+     * @throws Exception
+     */
     @Override
     public void start(Stage primaryStage) throws Exception
     {

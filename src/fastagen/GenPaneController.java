@@ -1,26 +1,36 @@
 package fastagen;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+
+import javafx.stage.Stage;
+import javafx.stage.FileChooser;
+
+import javafx.collections.FXCollections;
+
+import javafx.application.Platform;
+
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.fxml.Initializable;
+
 import java.net.URL;
+
 import java.util.ResourceBundle;
-import javafx.collections.FXCollections;
 import java.util.ArrayList;
 import java.util.HashMap;
-import javafx.stage.FileChooser;
+
 import java.io.PrintStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import javafx.application.Platform;
 
+/**
+ * this class serves as the Controller class for the "read mode" scene of the GUI
+ */
 public class GenPaneController implements Initializable
 {
     private FastaProcessor processor;
@@ -39,11 +49,18 @@ public class GenPaneController implements Initializable
 
     @FXML TextArea gPtextArea;
 
+    /**
+     * implements the inherided method of the <code>Initializable</code> interface
+     * and initializes the scene and fills objects with the appropriate initial values
+     * @param url required parameter
+     * @param rb required parameter
+     */
     @Override
     public void initialize(URL url, ResourceBundle rb)
     {
-        ps = new PrintStream(new Console(gPtextArea));
+        ps = new PrintStream(new Console(gPtextArea)); // crreate PrintStream object to later print results to TextArea
 
+        // fill ChoiceBoxes and TextFields with initial values
         gPalphabetBox.setItems(FXCollections.observableArrayList("Genome", "Protein"));
         gPalphabetBox.setValue("Genome");
         
@@ -58,10 +75,14 @@ public class GenPaneController implements Initializable
         gPsaveAs.setDisable(true);
         gPdone.setVisible(false);
 
+        // set stdout and stderr to custom PrintStream
         System.setOut(ps);
         System.setErr(ps);
     }
 
+    /**
+     * closes the window
+     */
     @FXML
     public void close()
     {
@@ -69,12 +90,18 @@ public class GenPaneController implements Initializable
         stage.close();
     }
 
+    /**
+     * goes back to the initial scene
+     */
     @FXML
     public void back() throws Exception
     {
         switchPane(gPback, "startPane.fxml");
     }
 
+    /**
+     * saves the generated Fasta entries to a file using a FileSaveDialog
+     */
     @FXML
     public void saveOutput()
     {
@@ -84,6 +111,9 @@ public class GenPaneController implements Initializable
         AbstractFasta.writeEntries(processor.fastaEntries, outputFile, writeProperties);
     }
 
+    /**
+     * calculate the sequence properties and store them
+     */
     @FXML
     public void startCalc()
     {
@@ -99,9 +129,15 @@ public class GenPaneController implements Initializable
         if (isValid) processor = new FastaProcessor(input);
     }
 
+    /**
+     * turn off the option to calculate/write sequence properties
+     */
     @FXML
     public void writePropsOff() {writeProperties = false; gPdone.setVisible(false); gPstartCalc.setVisible(true);}
 
+    /**
+     * turn on the option to calculate/write sequence properties
+     */
     @FXML
     public void writePropsOn() {writeProperties = true; gPdone.setVisible(false); gPstartCalc.setVisible(true);}
     
@@ -112,6 +148,11 @@ public class GenPaneController implements Initializable
         b.getScene().setRoot(pane);
     }
 
+    /**
+     * convert the input from the various GUI fields to CLI input used by
+     * the CLI mode of this program in order to reuse the previously written methods
+     * @return the GUI input converted to classic CLI input
+     */
     private String[] convertGUIInputToCLIInput()
     {
         // convert the input from the GUI to CLI input so it can be evaluated
@@ -165,6 +206,9 @@ public class GenPaneController implements Initializable
     
 }
 
+/**
+ * local (private) class to redirect stdout to a TextArea in the GUI
+ */
 class Console extends OutputStream
 {
     private TextArea console;
@@ -184,4 +228,3 @@ class Console extends OutputStream
         appendText(String.valueOf((char)b));
     }
 }
-
