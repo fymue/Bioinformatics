@@ -42,7 +42,7 @@ public class Main extends Application
         this.primaryStage = primaryStage;
         Parent root = FXMLLoader.load(getClass().getResource("startPane.fxml"));
         primaryStage.setTitle("FastaGen");
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(root, 600, 440);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

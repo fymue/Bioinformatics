@@ -5,6 +5,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -14,10 +15,18 @@ import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javafx.stage.FileChooser;
+import java.io.PrintStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import javafx.application.Platform;
 
 public class GenPaneController implements Initializable
 {
-    boolean writeProperties = false;
+    private FastaProcessor processor;
+    private PrintStream ps;
+    private boolean writeProperties = false;
+    private InputEvaluator input = new InputEvaluator();
 
     @FXML
     Button gPdone, gPback, gPsaveAs, gPstartCalc, gPpropYes, gPpropNo;
@@ -28,9 +37,13 @@ public class GenPaneController implements Initializable
     @FXML
     TextField gPseqLengthFrom, gPseqLengthTo, gPseqs, gPfastaHeaderPrefix;
 
+    @FXML TextArea gPtextArea;
+
     @Override
     public void initialize(URL url, ResourceBundle rb)
     {
+        ps = new PrintStream(new Console(gPtextArea));
+
         gPalphabetBox.setItems(FXCollections.observableArrayList("Genome", "Protein"));
         gPalphabetBox.setValue("Genome");
         
@@ -45,7 +58,8 @@ public class GenPaneController implements Initializable
         gPsaveAs.setDisable(true);
         gPdone.setVisible(false);
 
-
+        System.setOut(ps);
+        System.setErr(ps);
     }
 
     @FXML
@@ -62,25 +76,34 @@ public class GenPaneController implements Initializable
     }
 
     @FXML
+    public void saveOutput()
+    {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Speichern unter");
+        String outputFile = chooser.showSaveDialog(gPsaveAs.getScene().getWindow()).toString();
+        AbstractFasta.writeEntries(processor.fastaEntries, outputFile, writeProperties);
+    }
+
+    @FXML
     public void startCalc()
     {
         // generate the Fasta entries and start the calculations
+        gPtextArea.clear();
         gPstartCalc.setVisible(false);
         gPdone.setVisible(true);
         gPsaveAs.setDisable(false);
+
         String[] args = convertGUIInputToCLIInput();
-        InputEvaluator input = new InputEvaluator();
         boolean isValid = input.evaluateInput(new CommandLineParser(args), args);
 
-        FastaProcessor processor;
         if (isValid) processor = new FastaProcessor(input);
     }
 
     @FXML
-    public void writePropsOff() {writeProperties = false; startCalc();}
+    public void writePropsOff() {writeProperties = false; gPdone.setVisible(false); gPstartCalc.setVisible(true);}
 
     @FXML
-    public void writePropsOn() {writeProperties = true; startCalc();}
+    public void writePropsOn() {writeProperties = true; gPdone.setVisible(false); gPstartCalc.setVisible(true);}
     
 
     private void switchPane(Button b, String fxmlFile) throws Exception
@@ -141,3 +164,24 @@ public class GenPaneController implements Initializable
     }
     
 }
+
+class Console extends OutputStream
+{
+    private TextArea console;
+
+    public Console(TextArea console)
+    {
+        this.console = console;
+    }
+
+    public void appendText(String valueOf)
+    {
+        Platform.runLater(() -> console.appendText(valueOf));
+    }
+
+    public void write(int b) throws IOException
+    {
+        appendText(String.valueOf((char)b));
+    }
+}
+

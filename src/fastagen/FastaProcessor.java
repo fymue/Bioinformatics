@@ -16,10 +16,12 @@ import java.util.Arrays;
  */
 public class FastaProcessor
 {
+    protected SequenceCollection<String, Sequence> fastaEntries;
+
     public FastaProcessor(InputEvaluator input)
     {
 
-        SequenceCollection<String, Sequence> fastaEntries = switch (input.collector.mode) 
+        fastaEntries = switch (input.collector.mode) 
         {
             case "read" -> readInputFasta(input); // read entries from file if "read" mode was specified
             case "generate" -> generateFasta(input); // generate random entries if "generate" mode was specified
@@ -93,21 +95,21 @@ public class FastaProcessor
             }
             catch (FastaMalformattedException e) //catch if the provided Fasta was malformatted and exit
             {
-                System.out.println(e);
+                System.err.println(e);
                 break;
             }
             catch (FileNotFoundException e) //try again if the file could not be found
             {
-                System.out.println("This file could not be found! Try again or press ENTER to exit...");
+                System.err.println("This file could not be found! Try again or press ENTER to exit...");
             }
             catch (NotFastaException e) //catch if the file doesn't have a proper Fasta file extension
             {
-                System.out.println(e);
+                System.err.println(e);
                 System.out.println("Try again or press ENTER to exit...");
             }
             catch (IOException e) //catch IO errors while reading the file and exit
             {
-                System.out.println("Error while reading file!");
+                System.err.println("Error while reading file!");
                 break;
             }
         }

@@ -50,7 +50,7 @@ public class InputEvaluator
         String mode = args[0].toLowerCase(); // read/generate mode
         if (!mode.equals("read") && !mode.equals("generate"))
         {
-            System.out.println("mode must be either 'read' or 'generate'!");
+            System.err.println("mode must be either 'read' or 'generate'!");
             return false; //return early in this case since checking the remaining parameters is unnecessary
         }
 
@@ -59,7 +59,7 @@ public class InputEvaluator
         String type = args[1].toLowerCase(); //type of alphabet to use for sequence generation
         if (!type.equals("protein") && !type.equals("genome"))
         {
-            System.out.println("type must be either 'Protein' or 'Genome'!");
+            System.err.println("type must be either 'Protein' or 'Genome'!");
             return false;
         }
     
@@ -76,7 +76,7 @@ public class InputEvaluator
         }
         catch (NumberFormatException e)
         {
-            System.out.println("totalEntries must be a whole number bigger than 0!");
+            System.err.println("totalEntries must be a whole number bigger than 0!");
             return false;
         }
 
@@ -97,9 +97,9 @@ public class InputEvaluator
         */
         catch (NumberFormatException | IndexOutOfBoundsException e)
         {
-            System.out.println("sequence length interval must be provided as 'min_length..max_length'!");
-            System.out.println("min_length must be smaller than max_length!");
-            System.out.println("min_length and max_length must be whole numbers bigger than 0!");
+            System.err.println("sequence length interval must be provided as 'min_length..max_length'!");
+            System.err.println("min_length must be smaller than max_length!");
+            System.err.println("min_length and max_length must be whole numbers bigger than 0!");
             return false;
         }
 
@@ -116,7 +116,7 @@ public class InputEvaluator
         }
         catch (NumberFormatException e)
         {
-            System.out.printf("The number of cores to use must be bigger than 1 and smaller than %d!\n", maxCores+1);
+            System.err.printf("The number of cores to use must be bigger than 1 and smaller than %d!\n", maxCores+1);
             return false;
         }
 
