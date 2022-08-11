@@ -2,13 +2,17 @@
 
 ## Kompilierung und Ausführung des Programmes
 
-Dieses Programm generiert eine vom Benutzer festgelegte Anzahl an zufälligen Nukleotid- oder Peptidsequenzen, welche eine zufällige Länge zwischen einem ebenfalls vom Benutzer festgelegten Minimal- und Maximalwert besitzen. Zusätzlich werden für Nukleotidsequenzen der GC-Gehalt, das Molekulargewicht sowie die Schmelztemperatur berechnet. Die Generierung bzw. Berechnung der Sequenzen wird auf mehrere Kerne ausgelagert. Die Sequenzen werden standardmäßig auf der Konsole ausgegeben, können aber auch in einer Datei im Fasta-Format gespeichert werden. Das Programm ist außerdem in der Lage, genomische Fasta-Dateien einzulesen, sequenzspezifische Kennzahlen wie z.B. den GC-Gehalt oder das Molekulargewicht zu berechnen und diese auszugeben bzw. modifiziert zu speichern. Die Benutzung bzw. Ausführung des Programmes kann sowohl über die Kommandozeile (CLI) als auch über eine graphische Benutzeroberfläche (GUI) erfolgen. Zur Ausführung des Programmes muss das Paket *fastagen* zunächst mit dem Befehl
+Dieses Programm generiert eine vom Benutzer festgelegte Anzahl an zufälligen Nukleotid- oder Peptidsequenzen, welche eine zufällige Länge zwischen einem ebenfalls vom Benutzer festgelegten Minimal- und Maximalwert besitzen. Zusätzlich werden für Nukleotidsequenzen der GC-Gehalt, das Molekulargewicht sowie die Schmelztemperatur berechnet. Die Generierung bzw. Berechnung der Sequenzen wird auf mehrere Kerne ausgelagert. Die Sequenzen werden standardmäßig auf der Konsole ausgegeben, können aber auch in einer Datei im Fasta-Format gespeichert werden. Das Programm ist außerdem in der Lage, genomische Fasta-Dateien einzulesen, sequenzspezifische Kennzahlen wie z.B. den GC-Gehalt oder das Molekulargewicht zu berechnen und diese auszugeben bzw. modifiziert zu speichern. Die Benutzung bzw. Ausführung des Programmes kann sowohl über die Kommandozeile (CLI) als auch über eine graphische Benutzeroberfläche (GUI) erfolgen. Zur Installation der Programmes muss zuerst das Repository heruntergeladen werden und anschließend in das Verzeichnis des Pakets des Programmes navigiert werden:
+```
+git clone https://github.com/fymue/Bioinformatics.git && cd Bioinformatics/src/fastagen/
+```
+Zur Ausführung des Programmes muss das Paket *fastagen* anschließend mit dem Befehl
 ```
 javac -d /path/to/bin/ -cp /path/to/junit.jar --module-path path/to/javafx/lib --add-modules javafx.controls,javafx.fxml fastagen/*.java && cp *.fxml path/to/bin/fastagen/
 ```
 kompiliert werden. Der Zusatz "-cp /path/to/junit.jar" ist nötig, da ein Teil des Programmes mittels des JUnit Framework in einem Unit-Test getestet wird (falls gewünscht). Es wird also neben einer aktuellen Version des [JDK](https://www.oracle.com/java/technologies/downloads/) auch das JUnit Framework in Form einer [.jar-Datei](https://search.maven.org/remotecontent?filepath=junit/junit/4.13.2/junit-4.13.2.jar) sowie [Hamcrest-core](https://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar) zur Durchführung des Unit-Tests benötigt. Wird dies nicht gewünscht kann die entsprechende Testklasse *SequenceTest.java* einfach nicht mitkompiliert werden. Zudem wird die [JavaFX-Library](https://gluonhq.com/products/javafx/) für die Ausführung im GUI-Modus benötigt. Im Anschluss kann das Programm im CLI-Modus über den Befehl
 ```
-java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]
+java -cp /path/to/bin/ --module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]
 ```
 ausgeführt werden. Der Unit-Test kann ebenfalls (separat) über die Kommandozeile über den den Befehl
 ```
@@ -16,7 +20,7 @@ java -cp /path/to/bin/:/path/to/junit.jar:/path/to/hamcrest-core.jar org.junit.r
 ```
 durchgeführt werden. Zur Ausführung des Programmes im GUI-Modus muss das Programm mit dem Befehl
 ```
-java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main GUI
+java -cp /path/to/bin/ --module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main GUI
 ```
 gestartet werden.
 
@@ -50,7 +54,7 @@ Bei der Ausführung des Programmes über die Kommandozeile können vom Benutzer 
 
 Diese Hilfe kann auch bei der Programmausführung u.a. mit dem Befehl
 ```
-java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main --help
+java -cp /path/to/bin/ --module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main --help
 ```
 ausgegeben werden.
 
