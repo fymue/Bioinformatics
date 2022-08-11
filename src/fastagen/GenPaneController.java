@@ -115,6 +115,9 @@ public class GenPaneController implements Initializable
         chooser.setTitle("Speichern unter");
         String outputFile = chooser.showSaveDialog(gPsaveAs.getScene().getWindow()).toString();
         AbstractFasta.writeEntries(processor.fastaEntries, outputFile, writeProperties);
+
+        // if an error occured during the Fasta writing process, create a popup
+        if (stderr.size() != 0) createErrorPopup();
     }
 
     /**
@@ -142,9 +145,7 @@ public class GenPaneController implements Initializable
              * if an exception was thrown/error message was printed to stderr,
              * read the buffer and create a popup displaying the error message
              */
-            String errorMsg = stderr.toString();
-            stderr.reset();
-            createErrorPopup(errorMsg);
+            createErrorPopup();
         }
     }
 
@@ -223,13 +224,22 @@ public class GenPaneController implements Initializable
         return args.toArray(new String[args.size()]);
     }
 
-    private void createErrorPopup(String errorMsg)
+    private void createErrorPopup()
     {
         // create a popup window displaying an error message
+        String errorMsg = stderr.toString(); // read error from stderr buffer
+        stderr.reset(); // clear the buffer in case a new error message appears
+
         Alert alert = new Alert(AlertType.ERROR);
         alert.setTitle("Fehler");
         alert.setHeaderText(null); // prevent display of header text
-        alert.setContentText(errorMsg);
+
+        TextArea area = new TextArea(errorMsg);
+
+        area.setWrapText(true);
+        area.setEditable(false);
+        alert.getDialogPane().setContent(area);
+        alert.setResizable(true);
         alert.showAndWait();
     }
     

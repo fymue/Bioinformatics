@@ -75,12 +75,13 @@ public class CommandLineParser
         System.out.println("-t, --threads <n>\t\tnumber of threads/cpu cores to use during entry generation (default: 3/4 of available cores)");
         System.out.println("-o, --out <file>\t\tfile (and path) to write the sequence entries to (default: print to console)");
         System.out.println("-q, --quiet\t\t\tdon't print any runtime (thread) information to the console");
-        System.out.println("--write-properties\t\talso write the nucleotide sequence properties to the Fasta file\n");
+        System.out.println("--write-properties\t\talso write the nucleotide sequence properties to the Fasta file");
+        System.out.println("--header <prefix>\t\t\tadd a prefix to the header of every generated Fasta entry\n");
+
         System.out.println("'read' Mode Options:\n");
         System.out.println("-o, --out \t\t\twrite read entries to a new file 'inputfile_parsed.fna'");
         System.out.println("-q, --quiet\t\t\tdon't print any runtime (thread) information to the console");
         System.out.println("--write-properties\t\talso write the nucleotide sequence properties to the Fasta file\n");
-        System.out.println("--header <prefix>\t\t\tadd a prefix to the header of every generated Fasta entry\n");
 
     }
 

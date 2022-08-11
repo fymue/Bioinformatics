@@ -117,7 +117,6 @@ public abstract class AbstractFasta implements Fasta
         {
             //catch IO errors if they appear
             System.err.println("Error occured while writing to file!");
-            e.printStackTrace();
         }
 
     }

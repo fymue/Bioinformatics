@@ -18,6 +18,8 @@ public class FastaProcessor
 {
     protected SequenceCollection<String, Sequence> fastaEntries;
 
+    public FastaProcessor() {}
+
     public FastaProcessor(InputEvaluator input)
     {
 
@@ -129,7 +131,7 @@ public class FastaProcessor
      * @throws IOException if an error occured during the reading/parsing process
      * @throws FileNotFoundException if the input file could not be found
      */
-    private SequenceCollection<String, Sequence> readFasta(String inputFasta)
+    public SequenceCollection<String, Sequence> readFasta(String inputFasta)
     throws FastaMalformattedException, IOException, FileNotFoundException
     {
         String l;
@@ -154,7 +156,7 @@ public class FastaProcessor
                 if (!header.matches(">[^>\s]+"))
                 {
                     //if the header is not formatted correctly, throw exception
-                    throw new FastaMalformattedException(String.format("invalid header (line %d)!", lineCount));
+                    throw new FastaMalformattedException(String.format("%s : invalid header (line %d)!", inputFasta, lineCount));
                 }
                 continue;
             }
@@ -166,7 +168,7 @@ public class FastaProcessor
                 {
                     //if the sequence contains non-IUPAC characters, throw exception
                     throw new FastaMalformattedException(
-                    String.format("sequence contains non-IUPAC characters (line %d)! Only genomic (DNA) sequences are supported!", lineCount));
+                    String.format("%s : sequence contains non-IUPAC characters (line %d)! Only genomic (DNA) sequences are supported!", inputFasta, lineCount));
                 }
 
                 inputSeqs.put(header, new Sequence(seq, alphabet)); //add the header-sequence pair to the collection
