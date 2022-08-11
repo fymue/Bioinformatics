@@ -11,7 +11,7 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fastagen.GenPaneController">
    <children>
-      <Text layoutX="193.0" layoutY="65.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Generate Fasta">
+      <Text layoutX="188.0" layoutY="65.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Generate Fasta(s)">
          <font>
             <Font size="30.0" />
          </font></Text>

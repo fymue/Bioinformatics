@@ -42,7 +42,7 @@ public class ReadPaneController implements Initializable
 {
     ByteArrayOutputStream stderr;
     @FXML
-    Button rPdone, rPback, rPreadFiles, rPopenDialog, rPplot;
+    Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot;
 
     @FXML
     ChoiceBox<String> rPmodeBox;
@@ -84,6 +84,7 @@ public class ReadPaneController implements Initializable
         String[] filePaths = new String[totalFilesSelected];
         for (int i=0; i<totalFilesSelected; i++) filePaths[i] = files.get(i).toString();
         rPlistView.getItems().addAll(filePaths);
+        rPstartCalc.setDisable(false);
     }
 
     /**
@@ -139,6 +140,8 @@ public class ReadPaneController implements Initializable
 
         rPmodeBox.setItems(FXCollections.observableArrayList("Genome"));
         rPmodeBox.setValue("Genome");
+
+        rPstartCalc.setDisable(true);
 
         // intitialize ListView properties (editable, multiple selection)
         rPlistView.setEditable(true);
