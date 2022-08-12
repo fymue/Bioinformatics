@@ -19,6 +19,8 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.Label;
+
 
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
@@ -28,6 +30,7 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 
 import java.io.File;
 import java.io.ByteArrayOutputStream;
@@ -44,9 +47,11 @@ import javafx.collections.ObservableList;
 public class ReadPaneController implements Initializable
 {
     private ByteArrayOutputStream stderr;
-    private HashMap<String, ObservableList<Entry>> calcResults = new HashMap<>();
+    private ArrayList<String> inputFiles;
+    private int currFile, totalInputFiles;
+    private ArrayList<ObservableList<Entry>> calcResults = new ArrayList<>();
 
-    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot;
+    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot, rPprevFile, rPnextFile;
 
     @FXML private ChoiceBox<String> rPmodeBox;
 
@@ -59,6 +64,8 @@ public class ReadPaneController implements Initializable
     @FXML private TableColumn<Entry, Integer> gcCol; 
     
     @FXML private TableColumn<Entry, Double> molwCol, meltingtCol;
+
+    @FXML private Label rPcurrFileLabel;
 
 
     /**
@@ -109,14 +116,22 @@ public class ReadPaneController implements Initializable
         ObservableList<String> selected = rPlistView.getItems(); // all items currently in the ListView
         calcResults.clear(); // clear the previous calculation results (if there are any)
 
+        totalInputFiles = selected.size();
+
+
         if (selected.size() != 0)
         {
             InputEvaluator input = new InputEvaluator(args);
             FastaProcessor processor = new FastaProcessor();
 
-            for (String filePath: selected)
+            inputFiles = new ArrayList<>(totalInputFiles);
+            currFile = 0;
+
+            for (int i=0; i<totalInputFiles; i++)
             {
+                String filePath = selected.get(i);
                 String fileName = filePath.substring(filePath.lastIndexOf("/")+1);
+                inputFiles.add(fileName);
                 
                 try
                 {
@@ -126,7 +141,7 @@ public class ReadPaneController implements Initializable
                     ObservableList<Entry> fastaEntries = FXCollections.observableArrayList();
                     for (String header: fastaSeqs.keySet()) fastaEntries.add(new Entry(header, fastaSeqs.get(header)));
                 
-                    calcResults.put(fileName, fastaEntries);
+                    calcResults.add(fastaEntries);
                 }
                 catch (Exception e)
                 {
@@ -136,14 +151,25 @@ public class ReadPaneController implements Initializable
                 }
             }
             
-            rPtableView.getItems().clear();
-            rPtableView.refresh();
-
-            for (String file: calcResults.keySet())
-            {
-                rPtableView.getItems().addAll(calcResults.get(file));
-            }
+            rPcurrFileLabel.setText(inputFiles.get(currFile));
+            updateTableView(currFile); // fill table with results from current input file
         }
+    }
+
+    @FXML
+    public void nextFile()
+    {
+        currFile = (currFile == totalInputFiles - 1) ? 0 : currFile + 1;
+        rPcurrFileLabel.setText(inputFiles.get(currFile));
+        updateTableView(currFile);
+    }
+
+    @FXML
+    public void prevFile()
+    {
+        currFile = (currFile == 0) ? totalInputFiles - 1 : currFile - 1;
+        rPcurrFileLabel.setText(inputFiles.get(currFile));
+        updateTableView(currFile);
     }
 
     /**
@@ -212,5 +238,12 @@ public class ReadPaneController implements Initializable
         alert.getDialogPane().setContent(area);
         alert.setResizable(true);
         alert.showAndWait();
+    }
+
+    private void updateTableView(int currFile)
+    {
+        rPtableView.getItems().clear();
+        rPtableView.getItems().addAll(calcResults.get(currFile));
+        rPtableView.refresh();
     }
 }
