@@ -20,6 +20,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 
 import javafx.stage.Stage;
@@ -139,8 +140,7 @@ public class ReadPaneController implements Initializable
             for (int i=0; i<totalInputFiles; i++)
             {
                 String filePath = selected.get(i);
-                String fileName = filePath.substring(filePath.lastIndexOf("/")+1);
-                inputFiles.add(fileName);
+                inputFiles.add(filePath);
                 
                 try
                 {
@@ -160,7 +160,8 @@ public class ReadPaneController implements Initializable
                 }
             }
             
-            rPcurrFileLabel.setText(inputFiles.get(currFile));
+            rPcurrFileLabel.setText(isolateFileName(inputFiles.get(currFile)));
+            rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
             updateTableView(rPtableView, currFile); // fill table with results from current input file
         }
     }
@@ -172,7 +173,8 @@ public class ReadPaneController implements Initializable
     public void nextFile()
     {
         currFile = (currFile == totalInputFiles - 1) ? 0 : currFile + 1;
-        rPcurrFileLabel.setText(inputFiles.get(currFile));
+        rPcurrFileLabel.setText(isolateFileName(inputFiles.get(currFile)));
+        rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
         updateTableView(rPtableView, currFile);
     }
 
@@ -183,7 +185,8 @@ public class ReadPaneController implements Initializable
     public void prevFile()
     {
         currFile = (currFile == 0) ? totalInputFiles - 1 : currFile - 1;
-        rPcurrFileLabel.setText(inputFiles.get(currFile));
+        rPcurrFileLabel.setText(isolateFileName(inputFiles.get(currFile)));
+        rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
         updateTableView(rPtableView, currFile);
     }
 
@@ -196,13 +199,20 @@ public class ReadPaneController implements Initializable
     {
         final Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
-        stage.initOwner(rPmaximizeTable.getScene().getWindow());
         stage.sizeToScene();
+
         VBox dialogPane = new VBox();
+
         TableView tableView = new TableView<Entry>();
+        TableColumn<Entry, String> headerCol = new TableColumn<>("Header");
+        TableColumn<Entry, Integer> gcCol = new TableColumn<>("GC[%]"); 
+        TableColumn<Entry, Double> molwCol = new TableColumn<>("M[g·mol−1]");
+        TableColumn<Entry, Double> meltingtCol = new TableColumn<>("Tm[°C]");
+
         tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        initializeTableView(tableView);
+        initializeTableView(tableView, headerCol, gcCol, molwCol, meltingtCol);
         updateTableView(tableView, currFile);
+
         dialogPane.getChildren().add(tableView);
         Scene dialogScene = new Scene(dialogPane, 600, 428);
         stage.setScene(dialogScene);
@@ -229,6 +239,14 @@ public class ReadPaneController implements Initializable
         rPmaximizeTable.setDisable(true);
         rPnextFile.setDisable(true);
         rPprevFile.setDisable(true);
+
+        rPback.setTooltip(new Tooltip("Zurück zur Startseite"));
+        rPprevFile.setTooltip(new Tooltip("Ergebnisse der vorherigen Datei"));
+        rPnextFile.setTooltip(new Tooltip("Ergebnisse der nächsten Datei"));
+        rPplot.setTooltip(new Tooltip("Plotte GC[%] vs. M[g·mol-1]"));
+        rPstartCalc.setTooltip(new Tooltip("Berechne GC-Gehalt, mol. Gewicht, Schmelztemp."));
+        rPmaximizeTable.setTooltip(new Tooltip("Tabelle auf Fenstergröße maximieren"));
+
 
         // intitialize ListView properties (editable, multiple selection)
         rPlistView.setEditable(true);
@@ -259,7 +277,7 @@ public class ReadPaneController implements Initializable
         });
 
         // initialize TableView for display of sequence properties
-        initializeTableView(rPtableView);
+        initializeTableView(rPtableView, headerCol, gcCol, molwCol, meltingtCol);;
     }
 
     private void switchPane(Button b, String fxmlFile) throws Exception
@@ -287,7 +305,8 @@ public class ReadPaneController implements Initializable
         alert.showAndWait();
     }
 
-    private void initializeTableView(TableView tableView)
+    private void initializeTableView(TableView tableView, TableColumn<Entry, String> headerCol, TableColumn<Entry, Integer> gcCol,
+                                     TableColumn<Entry, Double> molwCol, TableColumn<Entry, Double> meltingtCol)
     {
         headerCol.setCellValueFactory(new PropertyValueFactory<Entry, String>("header"));
         gcCol.setCellValueFactory(new PropertyValueFactory<Entry, Integer>("gcContent"));
@@ -301,4 +320,6 @@ public class ReadPaneController implements Initializable
         tableView.getItems().clear();
         tableView.getItems().addAll(calcResults.get(currFile));
     }
+
+    private String isolateFileName(String filePath) {return filePath.substring(filePath.lastIndexOf("/")+1);}
 }

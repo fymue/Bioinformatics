@@ -12,12 +12,12 @@
             <Font size="30.0" />
          </font>
       </Text>
-      <Text layoutX="68.0" layoutY="129.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Dieses Programm kann zur Generierung von zufälligen Nukleotid-/Peptid-Sequenzen oder zum Lesen von existierenden Sequenzen im Fasta-Format verwendet werden. Bitte wählen Sie den Modus des Programmes aus:" wrappingWidth="224.3830966949463">
+      <Text layoutX="77.0" layoutY="147.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Dieses Programm kann zur Generierung von zufälligen Nukleotid-/Peptid-Sequenzen oder zum Lesen von existierenden Sequenzen im Fasta-Format verwendet werden. Außerdem können typische DNA-Sequenz-Kennzahlen berechnet werden. Bitte wählen Sie den Modus des Programmes aus:" textAlignment="CENTER" wrappingWidth="444.3830966949463">
          <font>
             <Font size="16.0" />
          </font>
       </Text>
-      <Button fx:id="sPgen" layoutX="357.0" layoutY="187.0" mnemonicParsing="false" onAction="#switchToGenPane" text="GENERATE" />
-      <Button fx:id="sPread" layoutX="463.0" layoutY="187.0" mnemonicParsing="false" onAction="#switchToReadPane" text="READ" />
+      <Button fx:id="sPgen" layoutX="218.0" layoutY="287.0" mnemonicParsing="false" onAction="#switchToGenPane" prefHeight="30.0" prefWidth="82.0" text="GENERATE" />
+      <Button fx:id="sPread" layoutX="307.0" layoutY="287.0" mnemonicParsing="false" onAction="#switchToReadPane" prefHeight="30.0" prefWidth="81.0" text="READ" />
    </children>
 </AnchorPane>

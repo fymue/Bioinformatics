@@ -19,6 +19,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.Label;
 
 import java.net.URL;
 
@@ -50,6 +52,8 @@ public class GenPaneController implements Initializable
 
     @FXML private TextArea gPtextArea;
 
+    @FXML private Label gPpropLabel;
+
     /**
      * implements the inherided method of the <code>Initializable</code> interface
      * and initializes the scene and fills objects with the appropriate initial values
@@ -76,6 +80,11 @@ public class GenPaneController implements Initializable
 
         gPsaveAs.setDisable(true);
         gPdone.setVisible(false);
+
+        gPstartCalc.setTooltip(new Tooltip("Starte Sequenz-Generierung"));
+        gPback.setTooltip(new Tooltip("Zurück zur Startseite"));
+        gPpropLabel.setTooltip(new Tooltip("Berechne GC-Gehalt, mol. Gewicht, Schmelztemp."));
+        gPsaveAs.setTooltip(new Tooltip("Speichern im Fasta-Format unter"));
 
         // set stdout and stderr to custom PrintStream
         

@@ -1,18 +1,39 @@
 package fastagen;
 
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
+
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;
+
+import java.net.URL;
+
+import java.util.ResourceBundle;
 
 /**
  * this class serves as the Controller class for the initial scene of the GUI
  */
-public class StartPaneController
+public class StartPaneController implements Initializable
 {
     @FXML private Button sPread, sPgen;
+
+     /**
+     * implements the inherided method of the <code>Initializable</code> interface
+     * and initializes the scene and fills objects with the appropriate initial values
+     * @param url required parameter
+     * @param rb required parameter
+     */
+    @Override
+    public void initialize(URL url, ResourceBundle rb)
+    {
+        sPread.setTooltip(new Tooltip("Fasta(s) einlesen"));
+        sPgen.setTooltip(new Tooltip("Fasta(s) generieren"));
+    }
 
     /**
      * switches to the scene associated with the "read" mode of the program

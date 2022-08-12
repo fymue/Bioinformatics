@@ -23,10 +23,10 @@
       <ListView fx:id="rPlistView" layoutX="34.0" layoutY="112.0" prefHeight="67.0" prefWidth="342.0" />
       <TableView fx:id="rPtableView" editable="true" layoutX="34.0" layoutY="193.0" prefHeight="200.0" prefWidth="342.0">
         <columns>
-          <TableColumn fx:id="headerCol" prefWidth="134.4000244140625" text="Header" />
-          <TableColumn fx:id="gcCol" prefWidth="36.79998779296875" text="GC%" />
-            <TableColumn fx:id="molwCol" prefWidth="79.20001220703125" text="mol. Weight" />
-            <TableColumn fx:id="meltingtCol" prefWidth="92.800048828125" text="Melting Temp." />
+          <TableColumn fx:id="headerCol" prefWidth="136.79998779296875" text="Header" />
+          <TableColumn fx:id="gcCol" prefWidth="52.0" text="GC[%]" />
+            <TableColumn fx:id="molwCol" prefWidth="88.800048828125" text="M[g·mol−1]" />
+            <TableColumn fx:id="meltingtCol" prefWidth="68.800048828125" text="Tm[°C]" />
         </columns>
       </TableView>
       <Button fx:id="rPplot" layoutX="421.0" layoutY="366.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="78.0" text="Plot" />
