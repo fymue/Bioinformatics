@@ -20,10 +20,12 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.Label;
-
+import javafx.scene.layout.VBox;
 
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
+import javafx.stage.PopupWindow;
+import javafx.stage.Modality;
 
 import java.net.URL;
 
@@ -35,7 +37,6 @@ import java.util.ArrayList;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -51,7 +52,7 @@ public class ReadPaneController implements Initializable
     private int currFile, totalInputFiles;
     private ArrayList<ObservableList<Entry>> calcResults = new ArrayList<>();
 
-    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot, rPprevFile, rPnextFile;
+    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot, rPprevFile, rPnextFile, rPmaximizeTable;
 
     @FXML private ChoiceBox<String> rPmodeBox;
 
@@ -119,13 +120,21 @@ public class ReadPaneController implements Initializable
         totalInputFiles = selected.size();
 
 
-        if (selected.size() != 0)
+        if (totalInputFiles != 0)
         {
             InputEvaluator input = new InputEvaluator(args);
             FastaProcessor processor = new FastaProcessor();
 
             inputFiles = new ArrayList<>(totalInputFiles);
             currFile = 0;
+
+            rPmaximizeTable.setDisable(false);
+
+            if (totalInputFiles > 1)
+            {
+                rPprevFile.setDisable(false);
+                rPnextFile.setDisable(false);
+            }
 
             for (int i=0; i<totalInputFiles; i++)
             {
@@ -152,24 +161,52 @@ public class ReadPaneController implements Initializable
             }
             
             rPcurrFileLabel.setText(inputFiles.get(currFile));
-            updateTableView(currFile); // fill table with results from current input file
+            updateTableView(rPtableView, currFile); // fill table with results from current input file
         }
     }
 
+    /**
+     * reloads the table with the content of the next file in the ListView
+     */
     @FXML
     public void nextFile()
     {
         currFile = (currFile == totalInputFiles - 1) ? 0 : currFile + 1;
         rPcurrFileLabel.setText(inputFiles.get(currFile));
-        updateTableView(currFile);
+        updateTableView(rPtableView, currFile);
     }
 
+    /**
+     * reloads the table with the content of the previous file in the ListView
+     */
     @FXML
     public void prevFile()
     {
         currFile = (currFile == 0) ? totalInputFiles - 1 : currFile - 1;
         rPcurrFileLabel.setText(inputFiles.get(currFile));
-        updateTableView(currFile);
+        updateTableView(rPtableView, currFile);
+    }
+
+    /**
+     * create a Popup window containing the current
+     * TableView (maximized and resizable)
+     */
+    @FXML
+    public void maximizeTable()
+    {
+        final Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initOwner(rPmaximizeTable.getScene().getWindow());
+        stage.sizeToScene();
+        VBox dialogPane = new VBox();
+        TableView tableView = new TableView<Entry>();
+        tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        initializeTableView(tableView);
+        updateTableView(tableView, currFile);
+        dialogPane.getChildren().add(tableView);
+        Scene dialogScene = new Scene(dialogPane, 600, 428);
+        stage.setScene(dialogScene);
+        stage.show();
     }
 
     /**
@@ -189,6 +226,9 @@ public class ReadPaneController implements Initializable
         rPmodeBox.setValue("Genome");
 
         rPstartCalc.setDisable(true);
+        rPmaximizeTable.setDisable(true);
+        rPnextFile.setDisable(true);
+        rPprevFile.setDisable(true);
 
         // intitialize ListView properties (editable, multiple selection)
         rPlistView.setEditable(true);
@@ -201,18 +241,25 @@ public class ReadPaneController implements Initializable
             ObservableList<String> selected = rPlistView.getSelectionModel().getSelectedItems();
             if (selected != null && e.getCode() == KeyCode.DELETE)
             {
+                if (selected.size() == rPlistView.getItems().size())
+                {
+                    rPstartCalc.setDisable(true);
+                    rPmaximizeTable.setDisable(true);
+                }
+
+                if (rPlistView.getItems().size() - selected.size() <= 1)
+                {
+                    rPprevFile.setDisable(true);
+                    rPnextFile.setDisable(true);
+                }
+
                 rPlistView.getItems().removeAll(selected);
+                
             }
         });
 
         // initialize TableView for display of sequence properties
-        headerCol.setCellValueFactory(new PropertyValueFactory<Entry, String>("header"));
-        gcCol.setCellValueFactory(new PropertyValueFactory<Entry, Integer>("gcContent"));
-        molwCol.setCellValueFactory(new PropertyValueFactory<Entry, Double>("molWeight"));
-        meltingtCol.setCellValueFactory(new PropertyValueFactory<Entry, Double>("meltingTemp"));
-
-        rPtableView.getColumns().addAll(headerCol, gcCol, molwCol, meltingtCol);
-
+        initializeTableView(rPtableView);
     }
 
     private void switchPane(Button b, String fxmlFile) throws Exception
@@ -240,10 +287,18 @@ public class ReadPaneController implements Initializable
         alert.showAndWait();
     }
 
-    private void updateTableView(int currFile)
+    private void initializeTableView(TableView tableView)
     {
-        rPtableView.getItems().clear();
-        rPtableView.getItems().addAll(calcResults.get(currFile));
-        rPtableView.refresh();
+        headerCol.setCellValueFactory(new PropertyValueFactory<Entry, String>("header"));
+        gcCol.setCellValueFactory(new PropertyValueFactory<Entry, Integer>("gcContent"));
+        molwCol.setCellValueFactory(new PropertyValueFactory<Entry, Double>("molWeight"));
+        meltingtCol.setCellValueFactory(new PropertyValueFactory<Entry, Double>("meltingTemp"));
+        tableView.getColumns().addAll(headerCol, gcCol, molwCol, meltingtCol);
+    }
+
+    private void updateTableView(TableView tableView, int currFile)
+    {
+        tableView.getItems().clear();
+        tableView.getItems().addAll(calcResults.get(currFile));
     }
 }
