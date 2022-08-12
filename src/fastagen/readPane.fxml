@@ -21,10 +21,12 @@
       <Button fx:id="rPdone" layoutX="506.0" layoutY="366.0" mnemonicParsing="false" onAction="#close" prefHeight="26.0" prefWidth="70.0" text="Fertig" />
       <Button fx:id="rPback" layoutX="34.0" layoutY="39.0" mnemonicParsing="false" onAction="#back" text="Zurück" />
       <ListView fx:id="rPlistView" layoutX="34.0" layoutY="112.0" prefHeight="67.0" prefWidth="342.0" />
-      <TableView layoutX="34.0" layoutY="193.0" prefHeight="200.0" prefWidth="342.0">
+      <TableView fx:id="rPtableView" editable="true" layoutX="34.0" layoutY="193.0" prefHeight="200.0" prefWidth="342.0">
         <columns>
-          <TableColumn prefWidth="75.0" text="C1" />
-          <TableColumn prefWidth="75.0" text="C2" />
+          <TableColumn fx:id="headerCol" prefWidth="134.4000244140625" text="Header" />
+          <TableColumn fx:id="gcCol" prefWidth="36.79998779296875" text="GC%" />
+            <TableColumn fx:id="molwCol" prefWidth="79.20001220703125" text="mol. Weight" />
+            <TableColumn fx:id="meltingtCol" prefWidth="92.800048828125" text="Melting Temp." />
         </columns>
       </TableView>
       <Button fx:id="rPplot" layoutX="421.0" layoutY="366.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="70.0" text="Plot" />

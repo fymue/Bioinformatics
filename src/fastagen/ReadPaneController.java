@@ -16,6 +16,9 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.input.KeyCode;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
@@ -40,15 +43,22 @@ import javafx.collections.ObservableList;
  */
 public class ReadPaneController implements Initializable
 {
-    ByteArrayOutputStream stderr;
-    @FXML
-    Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot;
+    private ByteArrayOutputStream stderr;
+    private HashMap<String, ObservableList<Entry>> calcResults = new HashMap<>();
 
-    @FXML
-    ChoiceBox<String> rPmodeBox;
+    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot;
 
-    @FXML
-    ListView rPlistView;
+    @FXML private ChoiceBox<String> rPmodeBox;
+
+    @FXML private ListView rPlistView;
+
+    @FXML private TableView<Entry> rPtableView;
+
+    @FXML private TableColumn<Entry, String> headerCol;
+
+    @FXML private TableColumn<Entry, Integer> gcCol; 
+    
+    @FXML private TableColumn<Entry, Double> molwCol, meltingtCol;
 
 
     /**
@@ -94,11 +104,10 @@ public class ReadPaneController implements Initializable
     @FXML
     public void startCalc()
     {
-        HashMap<String, SequenceCollection<String, Sequence>> calcResults = new HashMap<>();
-
         String[] args = {"read", "Genome", "--write-properties"};
 
         ObservableList<String> selected = rPlistView.getItems(); // all items currently in the ListView
+        calcResults.clear(); // clear the previous calculation results (if there are any)
 
         if (selected.size() != 0)
         {
@@ -113,7 +122,11 @@ public class ReadPaneController implements Initializable
                 {
                     // try to parse the provided Fasta file
                     SequenceCollection<String, Sequence> fastaSeqs = processor.readFasta(filePath);
-                    calcResults.put(fileName, fastaSeqs);
+
+                    ObservableList<Entry> fastaEntries = FXCollections.observableArrayList();
+                    for (String header: fastaSeqs.keySet()) fastaEntries.add(new Entry(header, fastaSeqs.get(header)));
+                
+                    calcResults.put(fileName, fastaEntries);
                 }
                 catch (Exception e)
                 {
@@ -121,6 +134,14 @@ public class ReadPaneController implements Initializable
                     System.err.println(e); // have to print to stderr first since stderr is read before popup creation
                     createErrorPopup();
                 }
+            }
+            
+            rPtableView.getItems().clear();
+            rPtableView.refresh();
+
+            for (String file: calcResults.keySet())
+            {
+                rPtableView.getItems().addAll(calcResults.get(file));
             }
         }
     }
@@ -158,6 +179,14 @@ public class ReadPaneController implements Initializable
             }
         });
 
+        // initialize TableView for display of sequence properties
+        headerCol.setCellValueFactory(new PropertyValueFactory<Entry, String>("header"));
+        gcCol.setCellValueFactory(new PropertyValueFactory<Entry, Integer>("gcContent"));
+        molwCol.setCellValueFactory(new PropertyValueFactory<Entry, Double>("molWeight"));
+        meltingtCol.setCellValueFactory(new PropertyValueFactory<Entry, Double>("meltingTemp"));
+
+        rPtableView.getColumns().addAll(headerCol, gcCol, molwCol, meltingtCol);
+
     }
 
     private void switchPane(Button b, String fxmlFile) throws Exception
@@ -184,5 +213,4 @@ public class ReadPaneController implements Initializable
         alert.setResizable(true);
         alert.showAndWait();
     }
-    
 }

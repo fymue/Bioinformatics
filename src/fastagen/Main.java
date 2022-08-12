@@ -50,6 +50,7 @@ public class Main extends Application
         primaryStage.setTitle("FastaGen");
         Scene scene = new Scene(root, 600, 440);
         primaryStage.setScene(scene);
+        primaryStage.setResizable(false);
         primaryStage.show();
     }
 }

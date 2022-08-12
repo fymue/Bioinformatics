@@ -12,8 +12,7 @@ import javafx.scene.control.Button;
  */
 public class StartPaneController
 {
-    @FXML
-    private Button sPread, sPgen;
+    @FXML private Button sPread, sPgen;
 
     /**
      * switches to the scene associated with the "read" mode of the program

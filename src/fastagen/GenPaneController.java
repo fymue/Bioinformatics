@@ -42,16 +42,13 @@ public class GenPaneController implements Initializable
     private boolean writeProperties = false;
     private InputEvaluator input = new InputEvaluator();
 
-    @FXML
-    Button gPdone, gPback, gPsaveAs, gPstartCalc, gPpropYes, gPpropNo;
+    @FXML private Button gPdone, gPback, gPsaveAs, gPstartCalc, gPpropYes, gPpropNo;
 
-    @FXML
-    ChoiceBox<String> gPalphabetBox, gPthreadsBox, gPseqsBox;
+    @FXML private ChoiceBox<String> gPalphabetBox, gPthreadsBox, gPseqsBox;
 
-    @FXML
-    TextField gPseqLengthFrom, gPseqLengthTo, gPseqs, gPfastaHeaderPrefix;
+    @FXML private TextField gPseqLengthFrom, gPseqLengthTo, gPseqs, gPfastaHeaderPrefix;
 
-    @FXML TextArea gPtextArea;
+    @FXML private TextArea gPtextArea;
 
     /**
      * implements the inherided method of the <code>Initializable</code> interface
