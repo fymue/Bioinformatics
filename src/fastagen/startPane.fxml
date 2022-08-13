@@ -12,7 +12,7 @@
             <Font size="30.0" />
          </font>
       </Text>
-      <Text layoutX="77.0" layoutY="147.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Dieses Programm kann zur Generierung von zufälligen Nukleotid-/Peptid-Sequenzen oder zum Lesen von existierenden Sequenzen im Fasta-Format verwendet werden. Außerdem können typische DNA-Sequenz-Kennzahlen berechnet werden. Bitte wählen Sie den Modus des Programmes aus:" textAlignment="CENTER" wrappingWidth="444.3830966949463">
+      <Text layoutX="78.0" layoutY="119.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Dieses Programm kann zur Generierung von zufälligen Nukleotid-/Peptid-Sequenzen oder zum Lesen von existierenden Sequenzen im Fasta-Format verwendet werden. Außerdem können typische DNA-Sequenz-Kennzahlen berechnet werden. Bitte wählen Sie den Modus des Programmes aus:" textAlignment="CENTER" wrappingWidth="444.3830966949463">
          <font>
             <Font size="16.0" />
          </font>

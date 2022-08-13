@@ -65,8 +65,8 @@ public class CommandLineParser
 
     private void printHelp()
     {
-        System.out.println("Usage (CLI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
         System.out.println("Usage (GUI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main GUI\n");
+        System.out.println("Usage (CLI mode): java -cp /path/to/bin/ -module-path path/to/javafx/lib/ --add-modules javafx.controls,javafx.fxml fastagen.Main (read|generate) (Protein|Genome) [Options]\n");
         System.out.println("(read|generate) specifies whether an existing Fasta file should be read or a new one should be generated");
         System.out.println("(Protein|Genome) specifies which alphabet to use for the sequence generation\n");
         System.out.println("'generate' Mode Options:\n");
@@ -134,6 +134,5 @@ public class CommandLineParser
             if (!validCommands.contains(args[i])) return false;
         }
         return true;
-    }
-    
+    } 
 }

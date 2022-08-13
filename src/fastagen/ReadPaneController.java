@@ -127,9 +127,9 @@ public class ReadPaneController implements Initializable
             FastaProcessor processor = new FastaProcessor();
 
             inputFiles = new ArrayList<>(totalInputFiles);
-            currFile = 0;
 
             rPmaximizeTable.setDisable(false);
+            rPplot.setDisable(false);
 
             if (totalInputFiles > 1)
             {
@@ -160,8 +160,7 @@ public class ReadPaneController implements Initializable
                 }
             }
             
-            rPcurrFileLabel.setText(isolateFileName(inputFiles.get(currFile)));
-            rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
+            currFile = 0;
             updateTableView(rPtableView, currFile); // fill table with results from current input file
         }
     }
@@ -173,8 +172,6 @@ public class ReadPaneController implements Initializable
     public void nextFile()
     {
         currFile = (currFile == totalInputFiles - 1) ? 0 : currFile + 1;
-        rPcurrFileLabel.setText(isolateFileName(inputFiles.get(currFile)));
-        rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
         updateTableView(rPtableView, currFile);
     }
 
@@ -185,8 +182,6 @@ public class ReadPaneController implements Initializable
     public void prevFile()
     {
         currFile = (currFile == 0) ? totalInputFiles - 1 : currFile - 1;
-        rPcurrFileLabel.setText(isolateFileName(inputFiles.get(currFile)));
-        rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
         updateTableView(rPtableView, currFile);
     }
 
@@ -239,6 +234,7 @@ public class ReadPaneController implements Initializable
         rPmaximizeTable.setDisable(true);
         rPnextFile.setDisable(true);
         rPprevFile.setDisable(true);
+        rPplot.setDisable(true);
 
         rPback.setTooltip(new Tooltip("Zurück zur Startseite"));
         rPprevFile.setTooltip(new Tooltip("Ergebnisse der vorherigen Datei"));
@@ -317,6 +313,10 @@ public class ReadPaneController implements Initializable
 
     private void updateTableView(TableView tableView, int currFile)
     {
+        String currFileName = isolateFileName(inputFiles.get(currFile));
+        rPplot.setTooltip(new Tooltip("Plotte GC[%] vs. M[g·mol-1] für Datei " + currFileName));
+        rPcurrFileLabel.setText(currFileName);
+        rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
         tableView.getItems().clear();
         tableView.getItems().addAll(calcResults.get(currFile));
     }
