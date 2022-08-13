@@ -211,6 +211,7 @@ public class ReadPaneController implements Initializable
         dialogPane.getChildren().add(tableView);
         Scene dialogScene = new Scene(dialogPane, 600, 428);
         stage.setScene(dialogScene);
+        stage.setTitle(isolateFileName(inputFiles.get(currFile)));
         stage.show();
     }
 
@@ -249,6 +250,17 @@ public class ReadPaneController implements Initializable
         rPlistView.setCellFactory(TextFieldListCell.forListView());
         rPlistView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
+        // switch the content of the TableView to the file that was clicked on in the ListView
+        rPlistView.setOnMouseClicked(e ->
+        {
+            String selectedFile = (String) rPlistView.getSelectionModel().getSelectedItem();
+            if (selectedFile != null)
+            {   
+                currFile = inputFiles.indexOf(selectedFile);
+                updateTableView(rPtableView, currFile);
+            }
+        });
+
         // add Key listener to ListView to delete selected entries on delete key
         rPlistView.setOnKeyPressed(e ->
         {
@@ -259,16 +271,27 @@ public class ReadPaneController implements Initializable
                 {
                     rPstartCalc.setDisable(true);
                     rPmaximizeTable.setDisable(true);
+                    rPplot.setDisable(true); 
                 }
-
                 if (rPlistView.getItems().size() - selected.size() <= 1)
                 {
                     rPprevFile.setDisable(true);
                     rPnextFile.setDisable(true);
                 }
 
+                // also delete the calc results of the files that should be removed
+                for (String filePath: selected)
+                {
+                    int fileIndex = inputFiles.indexOf(filePath);
+                    inputFiles.remove(fileIndex);
+                    calcResults.remove(fileIndex);
+                }
+
+                currFile = (inputFiles.size() == 0) ? -1 : 0; // if there are any files remaining, set currFile to 1st in list
+                updateTableView(rPtableView, currFile);
+
+                // remove the selected items from the ListView
                 rPlistView.getItems().removeAll(selected);
-                
             }
         });
 
@@ -313,12 +336,22 @@ public class ReadPaneController implements Initializable
 
     private void updateTableView(TableView tableView, int currFile)
     {
-        String currFileName = isolateFileName(inputFiles.get(currFile));
-        rPplot.setTooltip(new Tooltip("Plotte GC[%] vs. M[g·mol-1] für Datei " + currFileName));
-        rPcurrFileLabel.setText(currFileName);
-        rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
-        tableView.getItems().clear();
-        tableView.getItems().addAll(calcResults.get(currFile));
+        if (currFile != -1) // check if there still are calc results of a file left
+        {
+            String currFileName = isolateFileName(inputFiles.get(currFile));
+            rPplot.setTooltip(new Tooltip("Plotte GC[%] vs. M[g·mol-1] für Datei " + currFileName));
+            rPcurrFileLabel.setText(currFileName);
+            rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
+            tableView.getItems().clear();
+            tableView.getItems().addAll(calcResults.get(currFile));
+        }
+        else
+        {
+            rPplot.setTooltip(new Tooltip("Plotte GC[%] vs. M[g·mol-1]"));
+            rPcurrFileLabel.setText("");
+            rPcurrFileLabel.setTooltip(new Tooltip(""));
+            tableView.getItems().clear();
+        }
     }
 
     private String isolateFileName(String filePath) {return filePath.substring(filePath.lastIndexOf("/")+1);}
