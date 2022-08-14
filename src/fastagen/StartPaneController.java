@@ -1,18 +1,12 @@
 package fastagen;
 
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-
+import javafx.fxml.*;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
-
 import javafx.stage.Stage;
-import javafx.fxml.FXMLLoader;
-
 import java.net.URL;
-
 import java.util.ResourceBundle;
 
 /**

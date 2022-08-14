@@ -1,44 +1,17 @@
 package fastagen;
 
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-
+import javafx.fxml.*;
+import javafx.scene.control.*;
+import javafx.scene.chart.*;
+import javafx.stage.*;
+import java.util.*;
+import java.io.*;
+import javafx.scene.control.cell.*;
+import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.ListView;
-import javafx.scene.control.cell.TextFieldListCell;
-import javafx.scene.control.SelectionMode;
 import javafx.scene.input.KeyCode;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
-import javafx.scene.layout.VBox;
-
-import javafx.stage.Stage;
-import javafx.stage.FileChooser;
-import javafx.stage.PopupWindow;
-import javafx.stage.Modality;
-
 import java.net.URL;
-
-import java.util.ResourceBundle;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-
-import java.io.File;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -216,6 +189,50 @@ public class ReadPaneController implements Initializable
     }
 
     /**
+     * open a new Window containing a plot of the melting Temperature vs GC%
+     * of the currently displayed file in the TableView
+     */
+    @FXML
+    public void plotData()
+    {
+        final Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.sizeToScene();
+
+        VBox dialogPane = new VBox();
+
+        XYChart.Series series = new XYChart.Series(); 
+        series.setName("GC-Gehalt vs Schmelztemperatur");
+
+        // keep track of min. and max. melting temp for x axis scaling
+        double maxMeltingTemp = 0.0;
+        double minMeltingTemp = Double.POSITIVE_INFINITY;
+
+        for (Entry entry: calcResults.get(currFile))
+        {
+            int currGCContent = entry.getGcContent();
+            double currMeltingTemp = entry.getMeltingTemp();
+            maxMeltingTemp = Math.max(maxMeltingTemp, currMeltingTemp);
+            minMeltingTemp = Math.min(minMeltingTemp, currMeltingTemp);
+            series.getData().add(new XYChart.Data(currMeltingTemp, currGCContent)); 
+        }
+                
+        NumberAxis xAxis = new NumberAxis((int) (minMeltingTemp - 2), (int) (maxMeltingTemp + 2), 10); 
+        xAxis.setLabel("Tm[°C]"); 
+        NumberAxis yAxis = new NumberAxis(0, 100, 10); 
+        yAxis.setLabel("GC[%]");
+
+        LineChart lineChart = new LineChart(xAxis, yAxis);
+        lineChart.getData().add(series);
+
+        dialogPane.getChildren().add(lineChart);
+        Scene dialogScene = new Scene(dialogPane, 600, 428);
+        stage.setScene(dialogScene);
+        stage.setTitle(isolateFileName(inputFiles.get(currFile)));
+        stage.show();
+    }
+
+    /**
      * implements the inherided method of the <code>Initializable</code> interface
      * and initializes the scene and fills objects with the appropriate initial values
      * @param url required parameter
@@ -311,7 +328,7 @@ public class ReadPaneController implements Initializable
         String errorMsg = stderr.toString(); // read error from stderr buffer
         stderr.reset(); // clear the buffer in case a new error message appears
 
-        Alert alert = new Alert(AlertType.ERROR);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Fehler");
         alert.setHeaderText(null); // prevent display of header text
 

@@ -1,37 +1,16 @@
 package fastagen;
 
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-
+import javafx.fxml.*;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
-
 import javafx.collections.FXCollections;
-
 import javafx.application.Platform;
-
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Tooltip;
-import javafx.scene.control.Label;
-
+import javafx.scene.control.*;
 import java.net.URL;
-
-import java.util.ResourceBundle;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import java.io.PrintStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.ByteArrayOutputStream;
+import java.util.*;
+import java.io.*;
 
 /**
  * this class serves as the Controller class for the "read mode" scene of the GUI
@@ -236,7 +215,7 @@ public class GenPaneController implements Initializable
         String errorMsg = stderr.toString(); // read error from stderr buffer
         stderr.reset(); // clear the buffer in case a new error message appears
 
-        Alert alert = new Alert(AlertType.ERROR);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Fehler");
         alert.setHeaderText(null); // prevent display of header text
 

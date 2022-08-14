@@ -29,7 +29,7 @@
             <TableColumn fx:id="meltingtCol" prefWidth="68.800048828125" text="Tm[°C]" />
         </columns>
       </TableView>
-      <Button fx:id="rPplot" layoutX="421.0" layoutY="366.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="78.0" text="Plot" />
+      <Button fx:id="rPplot" layoutX="421.0" layoutY="366.0" mnemonicParsing="false" onAction="#plotData" prefHeight="26.0" prefWidth="78.0" text="Plot" />
       <ChoiceBox fx:id="rPmodeBox" layoutX="474.0" layoutY="39.0" prefHeight="26.0" prefWidth="102.0" />
       <Label layoutX="421.0" layoutY="43.0" text="Modus:" />
       <Button fx:id="rPprevFile" layoutX="424.0" layoutY="249.0" mnemonicParsing="false" onAction="#prevFile" prefHeight="26.0" prefWidth="78.0" text="Vorherige" />
