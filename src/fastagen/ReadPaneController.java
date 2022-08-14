@@ -25,8 +25,10 @@ public class ReadPaneController implements Initializable
     private ArrayList<String> inputFiles;
     private int currFile, totalInputFiles;
     private ArrayList<ObservableList<Entry>> calcResults = new ArrayList<>();
+    private ArrayList<SequenceCollection<String, Sequence>> inputFastas =  new ArrayList<>();
 
-    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot, rPprevFile, rPnextFile, rPmaximizeTable;
+    @FXML private Button rPdone, rPback, rPstartCalc, rPopenDialog, rPplot,
+                         rPprevFile, rPnextFile, rPmaximizeTable, rPsaveToFile;
 
     @FXML private ChoiceBox<String> rPmodeBox;
 
@@ -90,6 +92,7 @@ public class ReadPaneController implements Initializable
 
         ObservableList<String> selected = rPlistView.getItems(); // all items currently in the ListView
         calcResults.clear(); // clear the previous calculation results (if there are any)
+        inputFastas.clear();
 
         totalInputFiles = selected.size();
 
@@ -103,6 +106,7 @@ public class ReadPaneController implements Initializable
 
             rPmaximizeTable.setDisable(false);
             rPplot.setDisable(false);
+            rPsaveToFile.setDisable(false);
 
             if (totalInputFiles > 1)
             {
@@ -119,6 +123,7 @@ public class ReadPaneController implements Initializable
                 {
                     // try to parse the provided Fasta file
                     SequenceCollection<String, Sequence> fastaSeqs = processor.readFasta(filePath);
+                    inputFastas.add(fastaSeqs);
 
                     ObservableList<Entry> fastaEntries = FXCollections.observableArrayList();
                     for (String header: fastaSeqs.keySet()) fastaEntries.add(new Entry(header, fastaSeqs.get(header)));
@@ -232,6 +237,12 @@ public class ReadPaneController implements Initializable
         stage.show();
     }
 
+    @FXML
+    public void saveToFile()
+    {
+        AbstractFasta.writeEntries(inputFastas.get(currFile), genOutputFileName(currFile), true);
+    }
+
     /**
      * implements the inherided method of the <code>Initializable</code> interface
      * and initializes the scene and fills objects with the appropriate initial values
@@ -253,6 +264,7 @@ public class ReadPaneController implements Initializable
         rPnextFile.setDisable(true);
         rPprevFile.setDisable(true);
         rPplot.setDisable(true);
+        rPsaveToFile.setDisable(true);
 
         rPback.setTooltip(new Tooltip("Zurück zur Startseite"));
         rPprevFile.setTooltip(new Tooltip("Ergebnisse der vorherigen Datei"));
@@ -289,6 +301,7 @@ public class ReadPaneController implements Initializable
                     rPstartCalc.setDisable(true);
                     rPmaximizeTable.setDisable(true);
                     rPplot.setDisable(true); 
+                    rPsaveToFile.setDisable(true);
                 }
                 if (rPlistView.getItems().size() - selected.size() <= 1)
                 {
@@ -359,6 +372,7 @@ public class ReadPaneController implements Initializable
             rPplot.setTooltip(new Tooltip("Plotte GC[%] vs. M[g·mol-1] für Datei " + currFileName));
             rPcurrFileLabel.setText(currFileName);
             rPcurrFileLabel.setTooltip(new Tooltip(inputFiles.get(currFile)));
+            rPsaveToFile.setTooltip(new Tooltip("Speichern der berechneten Werte unter " + isolateFileName(genOutputFileName(currFile))));
             tableView.getItems().clear();
             tableView.getItems().addAll(calcResults.get(currFile));
         }
@@ -372,4 +386,11 @@ public class ReadPaneController implements Initializable
     }
 
     private String isolateFileName(String filePath) {return filePath.substring(filePath.lastIndexOf("/")+1);}
+
+    private String genOutputFileName(int currFile)
+    {
+        String currFileName = inputFiles.get(currFile);
+        String newFileName = currFileName.substring(0, currFileName.indexOf(".")) + "_parsed.fna";
+        return newFileName;
+    }
 }
