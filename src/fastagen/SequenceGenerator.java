@@ -46,12 +46,10 @@ public class SequenceGenerator implements Callable<Sequence>
 
         try
         {
-            //Thread.sleep(1000);
-
             //random number between minimum (interval[0]) and maximum (interval[1]) (both inclusive)
             int seqLength = interval[0] + (int) (Math.random() * (interval[1] - interval[0] + 1));
 
-            for (int i=0; i<=seqLength; i++)
+            for (int i=0; i<seqLength; i++)
             {
                 //random index within the length of the alphabet array to pick a random character
                 randomIndex = (int) (Math.random() * alphabet.length); 

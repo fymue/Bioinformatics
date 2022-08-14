@@ -18,8 +18,7 @@ import java.io.*;
 public class GenPaneController implements Initializable
 {
     private FastaProcessor processor;
-    private PrintStream stdout;
-    private ByteArrayOutputStream stderr;
+    private ByteArrayOutputStream stdout, stderr;
     private boolean writeProperties = false;
     private InputEvaluator input = new InputEvaluator();
 
@@ -42,7 +41,7 @@ public class GenPaneController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle rb)
     {
-        stdout = new PrintStream(new Console(gPtextArea)); // crreate PrintStream object to later print results to TextArea
+        stdout = new ByteArrayOutputStream();
         stderr = new ByteArrayOutputStream();
 
         // fill ChoiceBoxes and TextFields with initial values
@@ -66,9 +65,8 @@ public class GenPaneController implements Initializable
         gPsaveAs.setTooltip(new Tooltip("Speichern im Fasta-Format unter"));
 
         // set stdout and stderr to custom PrintStream
-        
         System.setErr(new PrintStream(stderr));
-        System.setOut(stdout);
+        System.setOut(new PrintStream(stdout));
     }
 
     /**
@@ -113,6 +111,7 @@ public class GenPaneController implements Initializable
     {
         // generate the Fasta entries and start the calculations
         gPtextArea.clear();
+        stdout.reset(); // clear the stdout buffer to not print previous results
 
         String[] args = convertGUIInputToCLIInput();
         boolean isValid = input.evaluateInput(new CommandLineParser(args), args);
@@ -123,6 +122,7 @@ public class GenPaneController implements Initializable
             gPstartCalc.setVisible(false);
             gPdone.setVisible(true);
             gPsaveAs.setDisable(false);
+            gPtextArea.setText(stdout.toString());
         }
         else
         {
@@ -228,27 +228,4 @@ public class GenPaneController implements Initializable
         alert.showAndWait();
     }
     
-}
-
-/**
- * local (private) class to redirect stdout to a TextArea in the GUI
- */
-class Console extends OutputStream
-{
-    private TextArea textArea;
-
-    public Console(TextArea textArea)
-    {
-        this.textArea = textArea;
-    }
-
-    public void appendText(String stdout)
-    {
-        Platform.runLater(() -> textArea.appendText(stdout));
-    }
-
-    public void write(int b) throws IOException
-    {
-        appendText(String.valueOf((char)b));
-    }
 }
