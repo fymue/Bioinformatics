@@ -1,7 +1,77 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sys import argv
+from typing import List, Tuple
 
+class HierarchClustering:
+    # perform hierachical clustering of data points
+
+    def __init__(self, input_file: str = None, delimiter: str = " ") -> None:
+
+        self.data = None
+
+        if input_file is not None:
+            data = self.read_input_file(input_file, delimiter)
+            if self.validate_data(data): self.data = data
+    
+    def read_input_file(self, input_file: str, delimiter: str) -> np.array:
+        # read the input file containing x and y coordinates of points
+
+        return np.loadtxt(input_file, delimiter=delimiter, dtype=np.float32)
+    
+    def validate_data(self, data: np.array) -> bool:
+        #check if the input data is valid (same length, all numbers)
+
+        valid = False
+        
+        if data is not None and not np.isnan(data).any(): valid = True
+        else: print("Invalid data structure! Please provide two arrays X and Y as data points!")
+
+        return valid
+    
+    def calc_dist(self, pt_1: np.array, pt_2: np.array, method: str ="reg") -> float:
+        #calculate the euclidian distance between two points
+
+        a = abs(pt_1[0] - pt_2[0]) ** 2
+        b = abs(pt_1[1] - pt_2[1]) ** 2
+
+        if method == "squared": return a + b
+
+        return np.sqrt(a + b)
+    
+    def calc_dist_matrix(self, data: np.array, method: str = "reg") -> np.array:
+        #calculate distances between all points (upper triangular is sufficient)
+
+        n = data.shape[0] # total number of points
+        dist_matrix = np.empty((n, n), dtype=np.float32)
+
+        for row in range(n):
+            for col in range(row, n):
+                pt_1 = data[row]
+                pt_2 = data[col]
+                dist_matrix[row, col] = self.calc_dist(pt_1, pt_2, method)
+
+        return dist_matrix
+    
+    def cluster_data(self, data: np.array, k: int) -> List[Tuple[float, float]]:
+        # cluster the data points using hierarchical clustering
+
+        if self.data is not None: data = self.data
+
+        # TODO: figure out how to efficiently store and update cluster members/ distance matrix
+
+        cluster_members = None
+
+        dists = self.calc_dist_matrix(data)
+
+        while k < data.shape[0]:
+            # cluster, until all points are part of only the initial k clusters
+
+
+
+            k += 1
+
+"""
 class HierarchClustering:
     def __init__(self, input_file, k, delimiter, output_file, title, cdist_method):
         x, y = self.read_data(input_file, delimiter)
@@ -136,6 +206,7 @@ class HierarchClustering:
         clusters = [{(x[el], y[el]) for el in clusters[i]} for i in range(len(clusters)) if i not in masked_rows]
 
         return clusters
+"""
 
 #handling of command line features
 valid_commands = {"-d", "-title", "-out", "-method"}
