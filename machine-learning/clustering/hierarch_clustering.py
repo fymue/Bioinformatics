@@ -1,18 +1,38 @@
+#!/usr/bin/env python3
+
 import matplotlib.pyplot as plt
 import numpy as np
+from time import time
 from sys import argv
-from typing import List, Tuple
+from typing import Tuple
+
+def timer(func, *args, times=1):
+    # time the execution time of a function
+
+    total_time = 0
+
+    for run in range(times):
+        st = time()
+        res = func(*args)
+        elapsed = time() -st
+        total_time += elapsed
+    
+    print(f"Average execution time ({times} runs): {total_time / times:.5f}s")
+    
+    return res
 
 class HierarchClustering:
     # perform hierachical clustering of data points
 
-    def __init__(self, input_file: str = None, delimiter: str = " ") -> None:
+    def __init__(self, input_file: str = None, delimiter: str = " ", method: str = "average") -> None:
 
         self.data = None
 
         if input_file is not None:
             data = self.read_input_file(input_file, delimiter)
             if self.validate_data(data): self.data = data
+        
+        self.calc_cluster_dist = self.set_cluster_dist_method(method)
     
     def read_input_file(self, input_file: str, delimiter: str) -> np.array:
         # read the input file containing x and y coordinates of points
@@ -32,181 +52,129 @@ class HierarchClustering:
     def calc_dist(self, pt_1: np.array, pt_2: np.array, method: str ="reg") -> float:
         #calculate the euclidian distance between two points
 
-        a = abs(pt_1[0] - pt_2[0]) ** 2
-        b = abs(pt_1[1] - pt_2[1]) ** 2
+        a = np.power(pt_1[0] - pt_2[:, 0], 2)
+        b = np.power(pt_1[1] - pt_2[:, 1], 2)
 
         if method == "squared": return a + b
 
         return np.sqrt(a + b)
     
-    def calc_dist_matrix(self, data: np.array, method: str = "reg") -> np.array:
+    def calc_dist_matrix(self, data: np.array, method: str = "reg") -> np.ma.array:
         #calculate distances between all points (upper triangular is sufficient)
 
         n = data.shape[0] # total number of points
-        dist_matrix = np.empty((n, n), dtype=np.float32)
 
-        for row in range(n):
-            for col in range(row, n):
-                pt_1 = data[row]
-                pt_2 = data[col]
-                dist_matrix[row, col] = self.calc_dist(pt_1, pt_2, method)
+        mask = ~np.triu(np.ones((n, n), dtype=bool), k=1)
+        dist_matrix = np.ma.empty((n, n), dtype=np.float32)
+        dist_matrix.mask = mask
+
+        for row in range(n-1):
+            row_cluster = data[row]
+            col_clusters = data[row+1:]
+            dist_matrix[row, row+1:] = self.calc_dist(row_cluster, col_clusters, method)
 
         return dist_matrix
     
-    def cluster_data(self, data: np.array, k: int) -> List[Tuple[float, float]]:
+    def set_cluster_dist_method(self, method):
+        # set the method to calculate the
+        # distance between two clusters
+
+        if method == "single":
+            return lambda c1, c2: np.min(np.column_stack((c1, c2)), axis=1)
+        elif method == "complete":
+            return lambda c1, c2: np.max(np.column_stack((c1, c2)), axis=1)
+
+        # default: calculate avg. distance
+        return lambda c1, c2: (c1 + c2) / 2
+
+    def update_dists(self, dists: np.ma.array, cluster_members: np.array,
+                     mask: np.array, merged_clusters: Tuple[int, int]) -> np.array:
+        # update the distance matrix after the
+        # two closest clusters have been merged
+
+        keep, discard = merged_clusters
+
+        # find cluster distances that need to be updated 
+        # (those that aren't masked already)
+        # and get indices from resulting boolean array
+
+        dists_to_update = np.logical_and(~cluster_members[keep], mask).nonzero()[0]
+
+        keep_arr = np.repeat(keep, dists_to_update.size) # repeat keep index to later zip it to cluster indices
+        discard_arr = np.repeat(discard, dists_to_update.size)
+
+        unmasked_keep_indices = ~dists.mask[dists_to_update, keep_arr]
+        unmasked_discard_indices = ~dists.mask[dists_to_update, discard_arr]
+
+        keep_i = np.column_stack((dists_to_update, keep_arr))[unmasked_keep_indices]
+        discard_i = np.column_stack((dists_to_update, discard_arr))[unmasked_discard_indices]
+
+        # sort row/col indices (if needed) since we only store upper triangular matrix
+        keep_i.sort()
+        discard_i.sort()
+
+        mx = keep_i.shape[0] # make sure that we only look at the clusters we actually need to update distances for
+
+        dists[keep_i[:mx, 0], keep_i[:mx, 1]] = self.calc_cluster_dist(dists[keep_i[:mx, 0], keep_i[:mx, 1]], 
+                                                                       dists[discard_i[:mx, 0], discard_i[:mx, 1]])
+
+        dists.mask[discard, :] = True
+        dists.mask[:, discard] = True
+
+        return dists
+    
+    def cluster_data(self, k: int, data: np.array = None) -> np.array:
         # cluster the data points using hierarchical clustering
 
-        if self.data is not None: data = self.data
-
-        # TODO: figure out how to efficiently store and update cluster members/ distance matrix
-
-        cluster_members = None
+        if data is None: data = self.data
 
         dists = self.calc_dist_matrix(data)
+
+        cluster_members = np.zeros(dists.shape, dtype=bool)
+        np.fill_diagonal(cluster_members, True)
+
+        mask = np.ones(cluster_members.shape[0], dtype=bool)
 
         while k < data.shape[0]:
             # cluster, until all points are part of only the initial k clusters
 
+            keep, discard = np.unravel_index(dists.argmin(), dists.shape) # get indices of 2 clusters w/ min. distance
 
+            combined_cluster = np.logical_or(cluster_members[keep], cluster_members[discard])
+            cluster_members[keep] = combined_cluster
+            mask[discard] = False
+
+            dists = self.update_dists(dists, cluster_members, mask, (keep, discard))
 
             k += 1
 
-"""
-class HierarchClustering:
-    def __init__(self, input_file, k, delimiter, output_file, title, cdist_method):
-        x, y = self.read_data(input_file, delimiter)
-        clusters = self.cluster(x, y, k, cdist_method)
-        self.plot_clusters(clusters, title, output_file)
-    
-    def read_data(self, file, delimiter):
-        x = []
-        y = []
-        with open(file, "r") as fin:
-            for l in fin:
-                l = l.rstrip()
-                if not l: continue
-                l = l.split(delimiter)
-                if len(l) != 2: return None, None
-                x.append(float(l[0]))
-                y.append(float(l[1]))
+        # remove clusters that have been added/merged to another cluster during the clustering
+        cluster_members = cluster_members[mask]
 
-        return x, y
+        return cluster_members
     
-    
-    def validate_data(self, x, y):
-        #check if the input data is valid (same length, all numbers)
-        valid = False
-        if x != None and y != None:
-            if len(x) == len(y): valid = True
-            else: print("Invalid data structure! x and y must have the same length!")
-        else:
-            print("Please provide two arrays X and Y as data points!")
+    def plot_clusters(self, cluster_members: np.array, data: np.array = None, title: str = None, output_file: str = None) -> None:
+        # plot the points of the different clusters
 
-        return valid, x, y
-    
-    def plot_clusters(self, cluster_members, title, output_file):
-        #plot the points of the different clusters
+        if data is None: data = self.data
         
-        for i, cluster in enumerate(cluster_members):
-            if len(cluster) == 0: continue
-            x, y = [], []
-            for pt1, pt2 in cluster: #separate the point coordinates of the current cluster
-                x.append(pt1)
-                y.append(pt2)
-            plt.scatter(x, y, s=10, label= f"Cluster {i+1} ({len(cluster)})") #scatter the points of the current cluster (each cluster will have a different color)
+        for i, cluster in enumerate(cluster_members, start=1):
+            # separate the point coordinates of the current cluster
+            points = data[cluster]
+            x, y = points[:, 0], points[:, 1]
 
-        plt.title(title)
+            plt.scatter(x, y, s=10, label= f"Cluster {i} ({np.sum(cluster)})") #scatter the points of the current cluster (each cluster will have a different color)
+
+        if title is not None: plt.title(title)
+
         plt.legend(loc="best")
-        if output_file != None: plt.savefig(output_file, dpi=300)
+
+        if output_file is not None: plt.savefig(output_file, dpi=300)
+
         plt.show()
         plt.close()
 
-    def calc_dist(self, pt1, pt2, method="reg"):
-        #calculate the distance between two points (euclidian distance)
-        a = abs(pt1[0] - pt2[0]) ** 2
-        b = abs(pt1[1] - pt2[1]) ** 2
-
-        if method == "squared": return a + b
-
-        return np.sqrt(a + b)
-    
-    def calc_dist_matrix(self, x, y, mask): #calculate distances between all points (upper triangular is sufficient)
-        return np.ma.array([[self.calc_dist(p1, p2) for p1 in zip(x, y)] for p2 in zip(x, y)], mask=mask)
-    
-    def merge_clusters(self, dists, clusters, row, col, cdist_method, masked_rows):
-        
-        new_cluster = clusters[row] | clusters[col] #collect all the points of the new cluster
-
-        #make a subset consisting of the distances of all these points to the other points (rows)
-        sub = dists[list(new_cluster)] 
-
-        #figure out which row makes more sense to be masked (ignored) and which to be updated
-        update, mask = (row, col) if len(clusters[row]) > len(clusters[col]) else (col, row)
-
-        #collapse the subset according to the cluster distance method specified by the user
-        if cdist_method == "single":
-            sub = np.ma.min(sub, axis=0)
-
-        elif cdist_method == "complete":
-            sub = np.ma.max(sub, axis=0)
-        
-        elif cdist_method == "average":
-            sub = np.ma.mean(sub, axis=0)
-
-        #update and mask the correct distance matrix values
-        for i in range(len(sub)):
-            if not dists.mask[update, i] and sub[i]: dists[update, i] = sub[i]
-            if not dists.mask[i, update] and sub[i]: dists[i, update] = sub[i]
-            dists[mask, i] = np.ma.masked
-            dists[i, mask] = np.ma.masked
-
-        masked_rows.add(mask) #add the row (cluster) to be ignored later
-
-        #add the new members to the cluster
-        #(to avoid errors the members of the masked clusters have to be added as well;
-        #these (duplicate) clusters will be ignored later)
-        clusters[mask] = new_cluster
-        clusters[update] = new_cluster
-    
-    def print_matrix(self, arr):
-        #function for better-looking printing of a (masked) matrix
-        for row in arr:
-            for el in row:
-                if type(el) != np.float64: print(" -- ", end=" ")
-                else:
-                    print(f"{el: 4.2f}", end = " ")
-            print()
-            
-    def cluster(self, x, y, k, cdist_method):
-        #cluster the data using the agglomerative hiearchical clustering method
-
-        #make a mask for the distance matrix (we only care about the (lower) triangular matrix (excluding diagonal))
-        mask = np.array([[False if i > j else True for j in range(len(x))] for i in range(len(x))])
-
-        #calculate the distance matrix w/ all distances between all points
-        dists = self.calc_dist_matrix(x, y, mask) 
-
-        clusters = [{i} for i in range(len(x))] #keep track of the clusters (beginning: every point = 1 cluster)
-        masked_rows = set() #keep track of rows (points) which have been merged into a different cluster
-
-        mx_merges = len(x) - k
-        merge_c = 0
-
-        while merge_c < mx_merges: #merge clusters until only k clusters are left
-
-            #find the two clusters (row and col indices) which currently have smallest distance
-            row, col = np.unravel_index(dists.argmin(), dists.shape) 
-
-            #merge the clusters and update the distance matrix
-            self.merge_clusters(dists, clusters, row, col, cdist_method, masked_rows)
-
-            merge_c += 1
-
-        #fill every cluster with the actual points it contains (ignore the masked rows/clusters)
-        clusters = [{(x[el], y[el]) for el in clusters[i]} for i in range(len(clusters)) if i not in masked_rows]
-
-        return clusters
-"""
+        return None
 
 #handling of command line features
 valid_commands = {"-d", "-title", "-out", "-method"}
@@ -249,6 +217,8 @@ def parse_command():
         title = get_args_val("-title", "")
         output_file = get_args_val("-out", None)
 
-        hierach_clustering = HierarchClustering(input_file, k, delimiter, output_file, title, method)
+        clusterer = HierarchClustering(input_file, delimiter, method)
+        cluster_members = clusterer.cluster_data(k)
+        clusterer.plot_clusters(cluster_members)
 
 if __name__ == "__main__": parse_command()
