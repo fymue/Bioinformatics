@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-import matplotlib.pyplot as plt
-import numpy as np
+import matplotlib.pyplot as plt, numpy as np, argparse
 from time import time
-from sys import argv
 from typing import Tuple
 
-def timer(func, *args, times=1):
+def timer(func, *args, times: int = 1):
     # time the execution time of a function
 
     total_time = 0
@@ -49,11 +47,11 @@ class HierarchClustering:
 
         return valid
     
-    def calc_dist(self, pt_1: np.array, pt_2: np.array, method: str ="reg") -> float:
-        #calculate the euclidian distance between two points
+    def calc_dist(self, pt_1: np.array, pts_2: np.array, method: str ="reg") -> np.array:
+        #calculate the euclidian distance between a point (pt_1) and 1-n points (pts_2)
 
-        a = np.power(pt_1[0] - pt_2[:, 0], 2)
-        b = np.power(pt_1[1] - pt_2[:, 1], 2)
+        a = np.power(pt_1[0] - pts_2[:, 0], 2)
+        b = np.power(pt_1[1] - pts_2[:, 1], 2)
 
         if method == "squared": return a + b
 
@@ -64,11 +62,14 @@ class HierarchClustering:
 
         n = data.shape[0] # total number of points
 
-        mask = ~np.triu(np.ones((n, n), dtype=bool), k=1)
+        mask = ~np.triu(np.ones((n, n), dtype=bool), k=1) # mask the lower triangular and main diagonal
         dist_matrix = np.ma.empty((n, n), dtype=np.float32)
         dist_matrix.mask = mask
 
         for row in range(n-1):
+            # calculate distances from cluster of current row 
+            # to every cluster of current col as vector operation
+
             row_cluster = data[row]
             col_clusters = data[row+1:]
             dist_matrix[row, row+1:] = self.calc_dist(row_cluster, col_clusters, method)
@@ -77,7 +78,7 @@ class HierarchClustering:
     
     def set_cluster_dist_method(self, method):
         # set the method to calculate the
-        # distance between two clusters
+        # distance between two clusters (vectorized)
 
         if method == "single":
             return lambda c1, c2: np.min(np.column_stack((c1, c2)), axis=1)
@@ -117,7 +118,8 @@ class HierarchClustering:
 
         dists[keep_i[:mx, 0], keep_i[:mx, 1]] = self.calc_cluster_dist(dists[keep_i[:mx, 0], keep_i[:mx, 1]], 
                                                                        dists[discard_i[:mx, 0], discard_i[:mx, 1]])
-
+        
+        # mask the row and col of one of the clusters previously merged 
         dists.mask[discard, :] = True
         dists.mask[:, discard] = True
 
@@ -130,20 +132,22 @@ class HierarchClustering:
 
         dists = self.calc_dist_matrix(data)
 
-        cluster_members = np.zeros(dists.shape, dtype=bool)
+        cluster_members = np.zeros(dists.shape, dtype=bool) # boolean array for members of every cluster
         np.fill_diagonal(cluster_members, True)
 
-        mask = np.ones(cluster_members.shape[0], dtype=bool)
+        mask = np.ones(cluster_members.shape[0], dtype=bool) # mask for clusters that have been merged (rows/cols will be ignored)
 
         while k < data.shape[0]:
             # cluster, until all points are part of only the initial k clusters
 
             keep, discard = np.unravel_index(dists.argmin(), dists.shape) # get indices of 2 clusters w/ min. distance
 
+            # update members of one of the merge members and mask the other one
             combined_cluster = np.logical_or(cluster_members[keep], cluster_members[discard])
             cluster_members[keep] = combined_cluster
             mask[discard] = False
 
+            # update the distance matrix after the merge
             dists = self.update_dists(dists, cluster_members, mask, (keep, discard))
 
             k += 1
@@ -176,49 +180,19 @@ class HierarchClustering:
 
         return None
 
-#handling of command line features
-valid_commands = {"-d", "-title", "-out", "-method"}
-help_commands = {"--help", "-help", "-h"}
+if __name__ == "__main__":
+    # handling of command line features
 
-def valid_command(args): return True if all(inp in valid_commands | help_commands for inp in args[1:len(args)-1] if inp[0] == "-") else False
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--delimiter", "-d", metavar="D", type=str, help="specify the delimiter of the input file")
+    parser.add_argument("--title", "-t", metavar="'TITLE'", type=str, help="title of the cluster plot")
+    parser.add_argument("--out", "-o", metavar="FILE", type=str, help="save the cluster plot to a file")
+    parser.add_argument("--method", "-m", metavar="METHOD", type=str, help="clustering method (average (default), single, complete")
+    parser.add_argument("input_file", type=str, help="path to input file containing data points")
+    parser.add_argument("k", type=int, help="number of clusters to form")
 
-def print_help():
-    print("Usage: hierach_clustering.py [OPTIONS] inputfile k\n")
-    print("k stands for the number of clusters.")
-    print("The input file should contain the x and y coordinates of a data point in the same line.")
-    print("The delimiter can be specified.\n")
-    print("Options:\n")
-    print('-d "delimiter"\t\t\tset the delimiter for the input file (standard: space)')
-    print('-title "title"\t\t\tset the title of the cluster plot')
-    print("-out filename\t\t\tsave the plot in a file")
-    print('-method "method"\t\tinter-cluster distance calculation method (Options: "single" (default), "complete", "average")')
+    args = parser.parse_args()
 
-def parse_command():
-
-    def get_args_val(arg, val):
-        if arg in args: val = argv[args[arg]+1]
-        return val
-
-    args = {arg : i for i, arg in enumerate(argv)}
-    targs = len(argv)
-    valid = valid_command(argv)
-    
-    if targs == 1 or not valid:
-        print('Usage: hierarch_clustering.py [OPTIONS] inputfile k\n')
-        print("use --help, -help or -h to display usage help\n")
-
-    elif targs == 2 and argv[1] in help_commands: print_help()
-        
-    elif targs >= 3 and valid:
-        input_file = argv[-2]
-        k = int(argv[-1])
-        delimiter = get_args_val("-d", " ")
-        method= get_args_val("-method", "single")
-        title = get_args_val("-title", "")
-        output_file = get_args_val("-out", None)
-
-        clusterer = HierarchClustering(input_file, delimiter, method)
-        cluster_members = clusterer.cluster_data(k)
-        clusterer.plot_clusters(cluster_members)
-
-if __name__ == "__main__": parse_command()
+    clusterer = HierarchClustering(args.input_file, args.delimiter, args.method)
+    cluster_members = clusterer.cluster_data(args.k)
+    clusterer.plot_clusters(cluster_members, title=args.title, output_file=args.out)
