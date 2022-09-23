@@ -1,192 +1,224 @@
-import matplotlib.pyplot as plt
-from math import sqrt
-from numpy import mean
-from sys import argv
+#!/usr/bin/env python3
+
+import numpy as np, matplotlib.pyplot as plt, argparse
 from kneed import KneeLocator
 
 class DBScan:
-    def __init__(self, input_file, eps, min_pts, delimiter, output_file, title, auto):
-        x, y = self.read_data(input_file, delimiter) #read the data from the input file
-        valid, x, y = self.validate_data(x, y, eps) #validate the data (shape correct etc.)
-        if valid:
-            dists = self.calc_dist_matrix(x, y) #calculate the distances bewtween all the points
-            if auto: eps = self.estimate_eps(x, y, dists, min_pts)
-            clusters = self.dbscan(x, y, eps, min_pts, dists)
-            self.plot_clusters(clusters, title, output_file)
+    def __init__(self, input_file: str = None, delimiter: str = " "):
+        self.data = None
 
-    def estimate_eps(self, x, y, dists, k):
-        #estimate a proper value of epsilon
-        #1. find the k nearest neighbors of every point
-        #2. find the avg. distance of those k distances
-        #3. sort the avg. distances and find the "knee point" in the curve
-
-        key = lambda p1, p2: (p1, p2) if (p1, p2) in dists else (p2, p1)
-        avg_k_dist = [mean(sorted([dists[key(p1, p2)] for p2 in zip(x, y) if p1 != p2])[:k]) for p1 in zip(x, y)]
-        avg_k_dist.sort()
-        knee_locator = KneeLocator(list(range(len(avg_k_dist))), avg_k_dist, curve="convex", direction="increasing")
-        eps = knee_locator.knee_y
-
-        #plt.plot(avg_k_dist)
-        #plt.show()
-        #plt.close()
-
-        return eps
-
-    def read_data(self, file, delimiter):
-        x = []
-        y = []
-        with open(file, "r") as fin:
-            for l in fin:
-                l = l.rstrip()
-                if not l: continue
-                l = l.split(delimiter)
-                if len(l) != 2: return None, None
-                x.append(float(l[0]))
-                y.append(float(l[1]))
-
-        return x,y
-
-    def validate_data(self, x, y, eps):
-        #check if the input data is valid (same length, all numbers)
-        valid = False
-        if x != None and y != None:
-            if len(x) == len(y): valid = True
-            else: print("Invalid data structure! x and y must have the same length!")
-        else:
-            print("Please provide two arrays X and Y as data points!")
-
-        if eps == -1:
-            valid = False
-            print("Epsilon value has not been set! Please choose an epsilon value or use the -auto option.")
-        return valid, x, y
+        if input_file is not None:
+            data = self.read_input_file(input_file, delimiter)
+            if self.validate_data(data): self.data = data
     
-    def plot_clusters(self, cluster_members, title, output_file):
-        #plot the points of the different clusters
-        
-        #labels = ["core", "border", "noise"]
-        for i, cluster in enumerate(cluster_members):
-            x, y = [], []
-            if i == 0: lgnd = f"Noise points ({len(cluster)})"
-            else: lgnd = f"Cluster {i} ({len(cluster)})"
-            for pt1, pt2 in cluster: #separate the point coordinates of the current cluster
-                x.append(pt1)
-                y.append(pt2)
-            plt.scatter(x, y, s=10, label=lgnd) #scatter the points of the current cluster (each cluster will have a different color)
+    def read_input_file(self, input_file: str, delimiter: str) -> np.array:
+        # read the input file containing x and y coordinates of points
 
-        plt.title(title)
+        return np.loadtxt(input_file, delimiter=delimiter, dtype=np.float32)
+    
+    def validate_data(self, data: np.array) -> bool:
+        #check if the input data is valid (same length, all numbers)
+
+        valid = False
+        
+        if data is not None and not np.isnan(data).any(): valid = True
+        else: print("Invalid data structure! Please provide two arrays X and Y as data points!")
+
+        return valid
+    
+    def calc_dist(self, pt_1: np.array, pts_2: np.array, method: str ="reg") -> np.array:
+        #calculate the euclidian distance between a point (pt_1) and 1-n points (pt_2)
+
+        a = np.power(pt_1[0] - pts_2[:, 0], 2)
+        b = np.power(pt_1[1] - pts_2[:, 1], 2)
+
+        if method == "squared": return a + b
+
+        return np.sqrt(a + b)
+    
+    def calc_dist_matrix(self, data: np.array = None, method: str = "reg") -> np.array:
+        #calculate distances between all points (upper triangular is sufficient)
+
+        if data is None: data = self.data 
+
+        n = len(data) # total number of points
+
+        dist_matrix = np.empty((n, n), dtype=np.float32)
+
+        for row in range(n-1):
+            # calculate distances from cluster of current row 
+            # to every cluster of current col as vector operation
+
+            row_point = data[row]
+            col_points = data[row:]
+            dist_matrix[row, row:] = self.calc_dist(row_point, col_points, method)
+        
+        dist_matrix[n-1, n-1] = 0.0
+
+        return dist_matrix
+
+    def calc_dist_indices(self, n: int) -> np.array:
+        # calculate the row and col indices
+        # for all distances of a point to all
+        # other points in a upper triangular matrix
+
+        indices = np.empty((2, n, n), dtype=np.uint16)
+
+        for i in range(n): 
+            row_i = np.concatenate((np.arange(i), np.repeat(i, n-i)))
+            col_i = np.concatenate((np.repeat(i, i), np.arange(i, n)))
+
+            indices[0, i] = row_i
+            indices[1, i] = col_i
+
+        return indices
+    
+    def estimate_eps(self, dist_matrix: np.array, k: int, data: np.array = None, indices: np.array = None) -> float:
+        # estimate a proper value of epsilon
+        # 1. find the k nearest neighbors of every point
+        # 2. find the avg. distance of those k distances
+        # 3. sort the avg. distances and find the "knee point" in the curve
+
+        if data is None: data = self.data
+        n = len(data)
+        if indices is None: indices = self.calc_dist_indices(n)
+
+        # Steps 1 & 2
+        avg_k_dist = np.mean(np.sort(dist_matrix[indices[0], indices[1]], axis=1)[:, 1:k+1], axis=1)
+
+        # Step 3
+        avg_k_dist.sort()
+
+        knee_locator = KneeLocator(np.arange(len(data)), avg_k_dist, curve="convex", direction="increasing")
+        eps = knee_locator.knee_y
+        
+        return eps
+    
+    def region_query(self, point_i: int, dists: np.array, indices: np.array, eps: float) -> np.array:
+        # find all points within the radius eps of a point
+
+        dists_to_point_i = dists[indices[0, point_i], indices[1, point_i]] <= eps
+
+        return dists_to_point_i.nonzero()[0]
+    
+    def expand_cluster(self, cluster_members: np.array, labels: np.array, neighbors: np.array, 
+                       dists: np.array, indices: np.array, cluster_id: int, eps: float, min_pts: int) -> None:
+            
+        # expand the current cluster by adding all neighbors
+        # of core points to the cluster
+
+        i = 0
+
+        while i < len(neighbors):
+            # go over all points of the seed list
+            # (will potentially be extended during the loop)
+
+            point_i = neighbors[i]
+            i += 1
+
+            if cluster_members[0, point_i]: 
+                # if point was previously labeled as noise,
+                # add to current cluster (as border point)
+                cluster_members[0, point_i] = False
+                cluster_members[cluster_id, point_i] = True
+                continue
+
+            if not labels[point_i]:
+                labels[point_i] = True
+                neighbors_ext = self.region_query(point_i, dists, indices, eps)
+
+                # extend neighbors (==cluster)
+                if len(neighbors_ext) >= min_pts:
+                    # find all points that are in the neighborhood
+                    # of the last core point that aren't already
+                    # in the neighbor array
+                    neighbors_diff = np.setdiff1d(neighbors_ext, neighbors, assume_unique=True)
+                    neighbors = np.concatenate((neighbors, neighbors_diff))
+
+                # add point to current cluster
+                cluster_members[cluster_id, point_i] = True
+        
+        return None
+    
+    def cluster_data(self, min_pts: int, eps: float = None, data: np.array = None, auto: bool = True) -> np.array:
+        # cluster the data using the DBScan clustering method
+
+        if data is None: data = self.data
+
+        dists = self.calc_dist_matrix(data)
+        indices = self.calc_dist_indices(len(data))
+
+        if auto or eps is None: eps = self.estimate_eps(dists, min_pts, indices=indices)
+
+        # boolean array for all (potential) clusters
+        cluster_members = np.zeros(dists.shape, dtype=bool)
+
+        # keep track which points have been assigned to a cluster
+        labels = np.zeros(len(data), dtype=bool)
+
+        cluster_id = 0
+
+        for i, point in enumerate(data):
+            if not labels[i]:
+                # only cluster unlabeled points
+                # (some will be labeled in expand_cluster)
+
+                labels[i] = True
+                neighbors = self.region_query(i, dists, indices, eps)
+
+                if len(neighbors) >= min_pts:
+                    # core point -> make new cluster and expand
+                    cluster_id += 1
+                    cluster_members[cluster_id, i] = True
+                    self.expand_cluster(cluster_members, labels, neighbors, dists, indices, cluster_id, eps, min_pts)
+                else:
+                    # noise point
+                    cluster_members[0, i] = True
+
+        # return only the clusters which contain points
+        # (the remaining rows were just placeholders)
+        return cluster_members[:cluster_id+1]
+
+    def plot_clusters(self, cluster_members: np.array, data: np.array = None, title: str = None, output_file: str = None) -> None:
+        # plot the points of the different clusters
+
+        if data is None: data = self.data
+
+        for i, cluster in enumerate(cluster_members):
+            # separate the point coordinates of the current cluster
+            points = data[cluster]
+            x, y = points[:, 0], points[:, 1]
+
+            if i == 0: label = f"Noise points ({np.sum(cluster)})"
+            else: label = f"Cluster {i} ({np.sum(cluster)})"
+
+            plt.scatter(x, y, s=10, label=label) #scatter the points of the current cluster (each cluster will have a different color)
+
+        if title is not None: plt.title(title)
+
         plt.legend(loc="best")
-        if output_file != None: plt.savefig(output_file, dpi=300)
+
+        if output_file is not None: plt.savefig(output_file, dpi=300)
+
         plt.show()
         plt.close()
 
-    def calc_dist(self, pt1, pt2):
-        #calculate the distance between two points (euclidian distance)
-        a = abs(pt1[0] - pt2[0]) ** 2
-        b = abs(pt1[1] - pt2[1]) ** 2
-        return sqrt(a + b)
+        return None
 
-    def region_query(self, curr_point, x, y, dists, eps):
-        #determine the neighboring point of a point within the radius eps
-        result = {}
-        for point in zip(x, y):
-            key = (curr_point, point)
-            if key not in dists: key = tuple(reversed(key)) #distance matrix only contains upper triangular - make sure the key fits
-            if dists[key] < eps: #if distance between current point and query point is < eps -> add it to result
-                result[point] = None 
+if __name__ == "__main__":
+    # handling of command line features
 
-        return result
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--delimiter", "-d", metavar="D", type=str, help="specify the delimiter of the input file")
+    parser.add_argument("--title", "-t", metavar="'TITLE'", type=str, help="title of the cluster plot")
+    parser.add_argument("--out", "-o", metavar="FILE", type=str, help="save the cluster plot to a file")
+    parser.add_argument("--epsilon", "-e", metavar="N", type=float, help="set epsilon value")
+    parser.add_argument("--minpts", "-mp", metavar="N", default=4, type=int, help="set the minimum points within epsilon (default: 4)")
+    parser.add_argument("--auto", "-a", action="store_true", help="let the program estimate an appropriate epsilon value")
+    parser.add_argument("input_file", type=str, help="path to input file containing data points")
+
+    args = parser.parse_args()
     
-    def expand_cluster(self, x, y, seedlist, labels, cluster_members, cluster_id, dists, eps, min_pts):
-        #if a point is a core point its part of a cluster; all points within its eps will be part of the cluster as well
-        c = 0
-        while c < len(seedlist): #loop, until the seedlist has been fully processed (might get extended during the process)
-            point = tuple(seedlist.keys())[c]
-            if labels[point] == "noise": #if point has been labeled "noise", but is in eps of a core point -> border point
-                cluster_members[0].remove(point)
-                labels[point] = "border"
-            else:
-                if labels[point] == None: #only process points that haven't been labeled yet 
-                    neighbors = self.region_query(point, x, y, dists, eps)
-                    if len(neighbors) >= min_pts: #if point is core point, extend the seedlist
-                        labels[point] = "core"
-                        for p in neighbors:
-                            if p not in seedlist: seedlist[p] = None
-                    else: labels[point] = "border"
-            
-            cluster_members[cluster_id].add(point) #add point to the current cluster (every point will either be "core"/"border")
-            c += 1 #keep increasing the index for the seedlist
-        return
-
-    def calc_dist_matrix(self, x, y): #calculate distances between all points (upper triangular is sufficient)
-        return {((x[i], y[i]), (x[j], y[j])) : self.calc_dist((x[i], y[i]), (x[j], y[j])) for i in range(len(x)) for j in range(i, len(x))}
-    
-    def init_labels(self, x, y): #initialize label lookup table for all points
-        return {(x[i], y[i]) : None for i in range(len(x))}
-
-    def dbscan(self, x, y, eps, min_pts, dists):
-        labels = self.init_labels(x, y)
-        cluster_members = [set()] 
-        cluster_id = 0
-
-        for point in zip(x, y):
-            if labels[point] == None: #only process unlabeled points (some will be labeled in expand_cluster())
-                seedlist = self.region_query(point, x, y, dists, eps) #get neighbor points within eps
-                if len(seedlist) >= min_pts: #if point is a "core" point, make new cluster and expand it
-                    labels[point] = "core" 
-                    cluster_id += 1
-                    cluster_members.append({point}) 
-                    self.expand_cluster(x, y, seedlist, labels, cluster_members, cluster_id, dists, eps, min_pts)
-                else:
-                    labels[point] = "noise"
-                    cluster_members[0].add(point)
-
-        return cluster_members
-
-#handling of command line features
-valid_commands = {"-d", "-eps", "-minpts", "-auto", "-title", "-out"}
-help_commands = {"--help", "-help", "-h"}
-
-def valid_command(args): return True if all(inp in valid_commands | help_commands for inp in args[1:len(args)-1] if inp[0] == "-") else False
-
-def print_help():
-    print("Usage: dbscan.py -eps value | -auto [OPTIONS] inputfile\n")
-    print("The input file should contain the x and y coordinates of a data point in the same line.")
-    print("The delimiter can be specified.\n")
-    print("Options:\n")
-    print('-d "delimiter"\t\tset the delimiter for the input file (standard: space)')
-    print("-eps value\t\tset the epsilon")
-    print("-minpts value\t\tset the minimum points within epsilon (standard: 4)")
-    print("-auto\t\t\tlet the program estimate an appropriate epsilon value")
-    print('-title "title"\t\tset the title of the cluster plot')
-    print("-out filename\t\tsave the plot in a file")
-
-def parse_command():
-
-    def get_args_val(arg, val):
-        if arg in args: val = argv[args[arg]+1]
-        return val
-
-    args = {arg : i for i, arg in enumerate(argv)}
-    targs = len(argv)
-    valid = valid_command(argv)
-    
-    if targs == 1 or not valid:
-        print("Usage: dbscan.py [-eps value|-auto] [OPTIONS] inputfile\n")
-        print("use --help, -help or -h to display usage help\n")
-
-    elif targs == 2 and argv[1] in help_commands: print_help()
-        
-    elif targs >= 3 and valid:
-        input_file = argv[-1]
-        delimiter = get_args_val("-d", " ")
-        min_pts = int(get_args_val("-minpts", 4))
-        title = get_args_val("-title", "")
-        output_file = get_args_val("-out", None)
-        auto = True if "-auto" in args else False
-        if auto: eps = None
-        else: eps = float(get_args_val("-eps", -1))
-
-        #print(input_file, eps, min_pts, delimiter, output_file, title, auto)
-        dbscan = DBScan(input_file, eps, min_pts, delimiter, output_file, title, auto)
-
-if __name__ == "__main__": parse_command()
+    clusterer = DBScan(args.input_file, args.delimiter)
+    cluster_members = clusterer.cluster_data(args.minpts, eps=args.epsilon, auto=args.auto)
+    clusterer.plot_clusters(cluster_members)
