@@ -198,10 +198,11 @@ class DBScan:
 
         plt.legend(loc="best")
 
-        if output_file is not None: plt.savefig(output_file, dpi=300)
-
-        plt.show()
-        plt.close()
+        if output_file is not None:
+            plt.savefig(output_file, dpi=300)
+        else:
+            plt.show()
+            plt.close()
 
         return None
 

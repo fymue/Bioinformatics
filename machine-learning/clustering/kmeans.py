@@ -55,10 +55,11 @@ class KMeans:
 
         plt.legend(loc="best")
 
-        if output_file is not None: plt.savefig(output_file, dpi=300)
-
-        plt.show()
-        plt.close()
+        if output_file is not None:
+            plt.savefig(output_file, dpi=300)
+        else:
+            plt.show()
+            plt.close()
 
         return None
     
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("--delimiter", "-d", metavar="D", type=str, help="specify the delimiter of the input file")
     parser.add_argument("--title", "-t", metavar="'TITLE'", type=str, help="title of the cluster plot")
     parser.add_argument("--out", "-o", metavar="FILE", type=str, help="save the cluster plot to a file")
-    parser.add_argument("--runs", "-r", metavar="N", type=int, default=1, help="pick the best run (lowest average intra-cluster distance) out of x runs")
+    parser.add_argument("--runs", "-r", metavar="N", type=int, default=1, help="pick the best run (lowest average intra-cluster distance) out of N runs")
     parser.add_argument("--plusplus", "-pp", action="store_true", help="Run the kmeans++ version of the algorithm (better initialization of the centroids)")
     parser.add_argument("input_file", type=str, help="path to input file containing data points")
     parser.add_argument("k", type=int, help="number of clusters to form")
