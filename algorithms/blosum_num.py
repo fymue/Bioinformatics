@@ -1,6 +1,7 @@
-import numpy as np
-from math import sqrt
-from sys import argv
+#!/usr/bin/env python3
+
+import numpy as np, argparse
+from typing import List, Dict
 
 def read_sequences(blocks_file):
     #to create the blocks substitution matrix (BLOSUM), we need "good", gap-free alignments of proteins
@@ -32,14 +33,15 @@ def read_sequences(blocks_file):
 
     return all_blocks
 
-def calc_blosum(blocks):
+def calc_blosum(blocks: List[List[str]], aminos: Dict[str, int]) -> np.array:
     #calculation of the BLOSUM using mostly numpy (for performance improvements)
     
-    aminos = {c : i for i, c in enumerate("CSTPAGNDEQHRKMILVFYWJ")}
     total_as = len(aminos)
 
     #create upper triangular matrix with all (one-sided) pairs of amino acids (used in step 1 and 2, see below)
     qij_matrix = [[0] * total_as for i in range(total_as)]
+
+    #qij_matrix = np.zeros((total_as, total_as), dtype=np.uint32)
 
     total_subs = 0 #keep track of the total number of substitutions (subs)
 
@@ -62,23 +64,23 @@ def calc_blosum(blocks):
     #Step 2: divide every value by the total number of subs (to get the relative number of subs) (Original BLOSUM paper: q_ij-Matrix)
     qij_matrix = np.array(qij_matrix) / total_subs #should be triangular only (but this is faster); will be corrected in step 3
     
-    #qij_matrix = np.triu(qij_matrix) + np.tril(qij_matrix, k=-1).T #upper triangular only
-
     #Step 3: sum up the relative frequencies of observed subs for every amino acid (Original BLOSUM paper: p_ij-Matrix)
-    colsums = np.sum(qij_matrix, axis=0) / 2
-    rowsums = np.sum(qij_matrix, axis=1) / 2
-    pij_matrix = np.array([colsums[i] + rowsums[i] for i in range(total_as)])
-    
+    colsums = np.sum(qij_matrix, axis=0)
+    rowsums = np.sum(qij_matrix, axis=1)
+    pij_matrix = (colsums + rowsums) / 2
+
     #Step 4: calculate the estimated sub frequencies for every pair of amino acids (Original BLOSUM paper: e_ij-Matrix)
-    sij_matrix = np.array([[pij_matrix[row] * pij_matrix[col] if row == col else pij_matrix[row] * pij_matrix[col] * 2 for col in range(total_as)] for row in range(total_as)])
+    sij_matrix = np.empty((total_as, total_as), dtype=np.float32)
+    for row in range(total_as): sij_matrix[row] = pij_matrix * pij_matrix[row] * 2
+    sij_matrix[np.arange(total_as), np.arange(total_as)] /= 2
 
     #Step 5: divide the observed sub frequencies by the estimated sub frequencies and normalize them (log2) (Original BLOSUM paper: s_ij-Matrix)
     #this matrix equals the BLOSUM
     sij_matrix = np.round(2 * np.log2(qij_matrix / sij_matrix))
 
-    return sij_matrix, aminos
+    return sij_matrix
 
-def print_matrix(m, aminos):
+def print_matrix(m: np.array, aminos: Dict[str, int]) -> None:
     #print the BLOSUM matrix
     print("     " + "    ".join(aminos))
     start = True
@@ -99,8 +101,9 @@ def print_matrix(m, aminos):
                 print("    ", end=" ")
     
     print("\n")
+    return None
 
-def write_matrix(blosum, file, aminos):
+def write_matrix(blosum: np.array, file: str, aminos: Dict[str, int]) -> None:
     #write the BLOSUM to a file
     with open(file, "w") as fout:
         fout.write("#observed amino acid\treplacement amino acid\tcost\n")
@@ -109,54 +112,22 @@ def write_matrix(blosum, file, aminos):
                 if row > col: continue
 
                 fout.write(f"{as1}\t{as2}\t{blosum[row, col]}\n")
-
-#handling of command line features
-valid_commands = {"-print", "-save"}
-help_commands = {"--help", "-help", "-h"}
-
-def valid_command(args): return False if not all(inp in valid_commands | help_commands for inp in args[1:len(args)-2] if inp[0] == "-" and ord(inp[1]) > 65) else True
-
-def print_help():
-    print("Usage: blosum_np.py [OPTIONS] path/to/blocks/file\n")
-    print("Options:\n")
-    print("-print\t\t\t\tprint blocks substitution matrix (BLOSUM)")
-    print("-save file\t\t\t\tsave the BLOSUM to a file\n")
-
-def parse_command():
-
-    def get_args_val(arg, val):
-        if arg in args: val = argv[args[arg]+1]
-        return val
-
-    args = {arg : i for i, arg in enumerate(argv)}
-    targs = len(argv)
-    valid = valid_command(argv)
-
-    if targs == 1 or not valid:
-        print("Usage: blosum_np.py [OPTIONS] path/to/blocks/file\n")
-        print("use --help, -help or -h to display usage help\n")
-
-    elif targs == 2 and argv[1] in help_commands: print_help()
-        
-    elif targs >= 3 and valid:
-        blocks_file = argv[-1]
-        output_file = get_args_val("-save", "")
-        print_blosum = True if "-print" in args else False
     
-    try:
-        blocks = read_sequences(blocks_file)
-        blosum, aminos = calc_blosum(blocks)
+    return None
 
-        if print_blosum:
-            print("BLOSUM-Matrix:\n")
-            print_matrix(blosum, aminos)
+if __name__ == "__main__": 
+    # handling of command line features
 
-        if output_file:
-            write_matrix(blosum, output_file, aminos)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--print", "-p", action="store_true", help="print blocks substitution matrix (BLOSUM)")
+    parser.add_argument("--save", "-s", metavar="FILE", type=str, help="ave the BLOSUM to a file")
+    parser.add_argument("blocks_file", type=str, help="path to blocks file")
+    
+    args = parser.parse_args()
 
-    except FileNotFoundError:
-        print("This file is of unknown structure or could not be found!")
+    aminos = {c : i for i, c in enumerate("CSTPAGNDEQHRKMILVFYWJ")}
+    blocks = read_sequences(args.blocks_file)
+    blosum = calc_blosum(blocks, aminos)
 
-if __name__ == "__main__": parse_command()
-
-        
+    if args.print: print_matrix(blosum, aminos)
+    if args.save: write_matrix(blosum, args.save, aminos)     
